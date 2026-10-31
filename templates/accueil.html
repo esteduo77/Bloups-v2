@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#101b46">
+    <meta name="description" content="BLOOPS, votre plateforme numérique polyvalente.">
+    <title>BLOOPS — Bienvenue</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <header class="header">
+        <a class="logo" href="/">BLOOPS<span>.</span></a>
+        <nav aria-label="Navigation principale">
+            <a href="#fonctionnalites">Découvrir</a>
+            <a href="#apropos">À propos</a>
+            <a class="nav-button" href="/connexion">Se connecter</a>
+        </nav>
+    </header>
+
+    <main>
+        <section class="hero">
+            <div class="hero-content">
+                <p class="eyebrow">TON UNIVERS NUMÉRIQUE</p>
+                <h1>Tout ton univers.<br><span>Un seul endroit.</span></h1>
+                <p class="description">
+                    Découvre BLOOPS, une plateforme qui rassemble
+                    tes outils numériques dans un espace simple,
+                    moderne et sécurisé.
+                </p>
+                <div class="hero-actions">
+                    <a class="primary-button" href="/inscription">Créer un compte</a>
+                    <a class="secondary-button" href="#fonctionnalites">Découvrir BLOOPS</a>
+                </div>
+            </div>
+
+            <div class="hero-decoration" aria-hidden="true">
+                <div class="glow-circle"></div>
+                <div class="cloud">☁️</div>
+                <div class="bubble bubble-one"></div>
+                <div class="bubble bubble-two"></div>
+            </div>
+        </section>
+
+        <section id="fonctionnalites" class="features">
+            <p class="eyebrow">UN ESPACE, PLUSIEURS POSSIBILITÉS</p>
+            <h2>Tout ce dont tu as besoin</h2>
+
+            <div class="feature-grid">
+                <article class="feature-card">
+                    <span>✉️</span>
+                    <h3>Messagerie</h3>
+                    <p>Communique dans un espace privé.</p>
+                </article>
+
+                <article class="feature-card">
+                    <span>☁️</span>
+                    <h3>Stockage cloud</h3>
+                    <p>Retrouve tes fichiers au même endroit.</p>
+                </article>
+
+                <article class="feature-card">
+                    <span>📅</span>
+                    <h3>Agenda</h3>
+                    <p>Organise tes journées et tes projets.</p>
+                </article>
+
+                <article class="feature-card">
+                    <span>🧩</span>
+                    <h3>Automatiseur</h3>
+                    <p>Crée des automatisations avec des blocs.</p>
+                </article>
+            </div>
+        </section>
+
+        <section id="apropos" class="about">
+            <h2>Bienvenue dans l'univers BLOOPS</h2>
+            <p>Un projet qui évolue avec ses utilisateurs.</p>
+        </section>
+    </main>
+
+    <footer>
+        <p>© BLOOPS — Tous droits réservés.</p>
+    </footer>
+</body>
+</html>
