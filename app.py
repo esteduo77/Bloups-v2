@@ -1,12 +1,12 @@
 import os
 
 from flask import Flask, render_template
+from models import db
 
 
 def create_app():
     app = Flask(__name__)
 
-    # Configuration de sécurité : la clé sera fournie par l'environnement.
     app.config["SECRET_KEY"] = os.environ.get("BLOOPS_SECRET_KEY")
 
     if not app.config["SECRET_KEY"]:
@@ -14,17 +14,26 @@ def create_app():
             "La variable BLOOPS_SECRET_KEY doit être configurée."
         )
 
-    # Page d'accueil
+    app.config["SQLALCHEMY_DATABASE_URI"] = (
+        "sqlite:///bloups.db"
+    )
+    app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+
+    db.init_app(app)
+
+    from models.user import User
+
+    with app.app_context():
+        db.create_all()
+
     @app.route("/")
     def accueil():
         return render_template("accueil.html")
 
-    # Page introuvable
     @app.errorhandler(404)
     def page_introuvable(error):
         return render_template("erreurs/404.html"), 404
 
-    # Erreur interne
     @app.errorhandler(500)
     def erreur_interne(error):
         return render_template("erreurs/500.html"), 500
