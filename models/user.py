@@ -3,6 +3,10 @@ from datetime import datetime, timezone
 from models import db
 
 
+def utc_now():
+    return datetime.now(timezone.utc)
+
+
 class User(db.Model):
     __tablename__ = "users"
 
@@ -36,14 +40,26 @@ class User(db.Model):
         default="user"
     )
 
+    account_status = db.Column(
+        db.String(30),
+        nullable=False,
+        default="pending_email"
+    )
+
+    email_verified_at = db.Column(db.DateTime(timezone=True))
+
+    guardian_email = db.Column(db.String(254))
+
+    guardian_consent_at = db.Column(db.DateTime(timezone=True))
+
     created_at = db.Column(
         db.DateTime(timezone=True),
         nullable=False,
-        default=lambda: datetime.now(timezone.utc)
+        default=utc_now
     )
 
     is_active = db.Column(
         db.Boolean,
         nullable=False,
-        default=True
+        default=False
     )
