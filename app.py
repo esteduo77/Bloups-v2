@@ -1,27 +1,35 @@
 import os
 
 from flask import Flask, render_template
+from flask_wtf.csrf import CSRFProtect
+
 from models import db
+
+csrf = CSRFProtect()
 
 
 def create_app():
     app = Flask(__name__)
 
-    app.config["SECRET_KEY"] = os.environ.get("BLOOPS_SECRET_KEY")
+    app.config["SECRET_KEY"] = os.environ.get(
+        "BLOOPS_SECRET_KEY"
+    )
 
     if not app.config["SECRET_KEY"]:
         raise RuntimeError(
             "La variable BLOOPS_SECRET_KEY doit être configurée."
         )
 
-    app.config["SQLALCHEMY_DATABASE_URI"] = (
-        "sqlite:///bloups.db"
-    )
+    app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///bloups.db"
     app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
     db.init_app(app)
+    csrf.init_app(app)
 
     from models.user import User
+    from routes.auth import auth
+
+    app.register_blueprint(auth)
 
     with app.app_context():
         db.create_all()
@@ -45,4 +53,8 @@ app = create_app()
 
 
 if __name__ == "__main__":
-    app.run(host="127.0.0.1", port=5000, debug=False)
+    app.run(
+        host="127.0.0.1",
+        port=5000,
+        debug=False
+    )
