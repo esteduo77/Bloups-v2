@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+
+{% block title %}Paramètres — BLOOPS{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/profile.css') }}">
+{% endblock %}
+
+{% block content %}
+<section class="profile-page">
+    <p class="eyebrow">SÉCURITÉ DU COMPTE</p>
+    <h1>Paramètres</h1>
+    <p class="intro">Tu peux modifier ton mot de passe ici.</p>
+
+    <form method="POST">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+        <label for="old_password">Ancien mot de passe</label>
+        <input id="old_password" type="password" name="old_password"
+               autocomplete="current-password" required>
+
+        <label for="new_password">Nouveau mot de passe</label>
+        <input id="new_password" type="password" name="new_password"
+               minlength="12" autocomplete="new-password" required>
+
+        <label for="confirmation">Confirmer le nouveau mot de passe</label>
+        <input id="confirmation" type="password" name="confirmation"
+               minlength="12" autocomplete="new-password" required>
+
+        <button type="submit">Modifier mon mot de passe</button>
+    </form>
+</section>
+{% endblock %}
