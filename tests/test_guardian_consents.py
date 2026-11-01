@@ -75,7 +75,7 @@ def test_email_non_verifie_empeche_activation(app):
         assert user.is_active is False
 
 
-def test_liens_parentaux_sont_distincts_et_a_usage_unique(app, client=None):
+def test_liens_parentaux_sont_distincts_et_a_usage_unique(app):
     with app.app_context():
         user = create_minor()
         token_1 = create_token(
