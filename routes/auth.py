@@ -177,20 +177,32 @@ def inscription():
         db.session.commit()
 
         try:
+            # Tous les utilisateurs doivent vérifier leur adresse e-mail.
+            send_validation_email(user)
+
             if age < 15:
+                # Les moins de 15 ans doivent aussi obtenir
+                # le consentement de leur représentant légal.
                 send_parent_request(user)
-                flash("La demande a été envoyée au représentant légal.")
+
+                flash(
+                    "Deux e-mails ont été envoyés : "
+                    "un pour vérifier ton adresse et un pour "
+                    "demander le consentement de ton représentant légal."
+                )
             else:
-                send_validation_email(user)
-                flash("Un e-mail de vérification vient d'être envoyé.")
+                flash(
+                    "Un e-mail de vérification vient d'être envoyé."
+                )
 
         except Exception:
             current_app.logger.exception(
                 "Échec de l'envoi d'un e-mail d'inscription."
             )
+
             flash(
-                "Le compte est en attente. L'envoi de l'e-mail "
-                "a échoué : une nouvelle tentative sera nécessaire."
+                "Le compte est en attente. "
+                "Au moins un e-mail n'a pas pu être envoyé."
             )
 
         return redirect(url_for("auth.inscription"))
