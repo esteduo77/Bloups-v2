@@ -3,11 +3,13 @@ from datetime import timedelta
 
 from flask import Flask, render_template
 from flask_wtf.csrf import CSRFProtect
+from flask_migrate import Migrate
 
 from models import db
 from extensions import limiter
 
 csrf = CSRFProtect()
+migrate = Migrate()
 
 
 def create_app(test_config=None):
@@ -26,13 +28,16 @@ def create_app(test_config=None):
         "BLOOPS_DATABASE_URL",
         "sqlite:///bloups.db"
     )
+
     app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
     app.config["PERMANENT_SESSION_LIFETIME"] = timedelta(hours=8)
     app.config["SESSION_COOKIE_HTTPONLY"] = True
     app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
+
     app.config["SESSION_COOKIE_SECURE"] = (
         os.environ.get("BLOOPS_COOKIE_SECURE", "0") == "1"
     )
+
     app.config["RATELIMIT_STORAGE_URI"] = os.environ.get(
         "BLOOPS_RATE_LIMIT_STORAGE_URI",
         "memory://"
@@ -44,6 +49,7 @@ def create_app(test_config=None):
     db.init_app(app)
     csrf.init_app(app)
     limiter.init_app(app)
+    migrate.init_app(app, db)
 
     from models.user import User
     from routes.auth import auth
@@ -51,9 +57,6 @@ def create_app(test_config=None):
 
     app.register_blueprint(auth)
     app.register_blueprint(account)
-
-    with app.app_context():
-        db.create_all()
 
     @app.route("/")
     def accueil():
