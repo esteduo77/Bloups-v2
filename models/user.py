@@ -48,6 +48,7 @@ class User(db.Model):
 
     email_verified_at = db.Column(db.DateTime(timezone=True))
     guardian_email = db.Column(db.String(254))
+    guardian_email_2 = db.Column(db.String(254))
     guardian_consent_at = db.Column(db.DateTime(timezone=True))
 
     bio = db.Column(
