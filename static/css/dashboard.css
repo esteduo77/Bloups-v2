@@ -1,0 +1,88 @@
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    min-height: 100vh;
+    font-family: Arial, sans-serif;
+    color: #17234d;
+    background: linear-gradient(135deg, #eef3ff, #f8f5ff);
+}
+
+.topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 20px 6%;
+    background: white;
+    box-shadow: 0 4px 20px #17234d12;
+}
+
+.logo {
+    color: #17234d;
+    font-size: 28px;
+    font-weight: 900;
+    text-decoration: none;
+}
+
+.logo span {
+    color: #8964ff;
+}
+
+.logout {
+    padding: 11px 18px;
+    border: 0;
+    border-radius: 10px;
+    color: white;
+    background: #435de0;
+    cursor: pointer;
+}
+
+.dashboard {
+    max-width: 1100px;
+    margin: 65px auto;
+    padding: 0 25px;
+}
+
+.eyebrow {
+    color: #7055d9;
+    font-weight: bold;
+    letter-spacing: 2px;
+}
+
+.dashboard h1 {
+    font-size: 36px;
+}
+
+.dashboard-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 20px;
+    margin-top: 35px;
+}
+
+.tile {
+    padding: 25px;
+    border-radius: 20px;
+    background: white;
+    box-shadow: 0 10px 30px #17234d10;
+}
+
+.tile span {
+    font-size: 32px;
+}
+
+.tile h2 {
+    font-size: 20px;
+}
+
+.tile p {
+    color: #77809b;
+}
+
+@media (max-width: 600px) {
+    .dashboard h1 {
+        font-size: 28px;
+    }
+}
