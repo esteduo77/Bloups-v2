@@ -1,0 +1,65 @@
+.profile-page {
+    width: min(92%, 650px);
+    margin: 40px auto;
+    padding: 30px;
+    border-radius: 22px;
+    background: #fff;
+    box-shadow: 0 10px 35px rgba(20, 40, 100, .12);
+}
+
+.profile-page h1 {
+    margin: 8px 0;
+    color: #183b85;
+}
+
+.eyebrow {
+    color: #7951dc;
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: 1.5px;
+}
+
+.intro {
+    margin-bottom: 25px;
+    color: #7180a3;
+}
+
+.profile-page form {
+    display: grid;
+    gap: 14px;
+}
+
+.profile-page label {
+    color: #25345c;
+    font-weight: 600;
+}
+
+.profile-page input,
+.profile-page textarea,
+.profile-page select {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid #ccd5eb;
+    border-radius: 10px;
+    font: inherit;
+    background: #fff;
+}
+
+.profile-page input:disabled {
+    color: #687797;
+    background: #edf1fa;
+}
+
+.profile-page textarea {
+    min-height: 100px;
+    resize: vertical;
+}
+
+.profile-page button { margin-top: 12px; }
+
+@media (max-width: 600px) {
+    .profile-page {
+        margin: 20px auto;
+        padding: 22px;
+    }
+}
