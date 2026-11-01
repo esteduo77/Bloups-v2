@@ -52,6 +52,9 @@ def create_app(test_config=None):
     migrate.init_app(app, db)
 
     from models.user import User
+    from models.contact import Contact
+    from models.contact_request import ContactRequest
+    from models.parental_approval import ParentalApproval
     from routes.auth import auth
     from routes.account import account
 
