@@ -1,0 +1,10 @@
+Migrations de base de données BLOOPS
+
+Avant toute migration sur une base existante, effectuer une sauvegarde.
+Pour une installation neuve : flask --app app db upgrade
+
+Pour une base existante dont la structure correspond exactement à 0001_initial :
+flask --app app db stamp 0001_initial
+flask --app app db upgrade
+
+Ne pas utiliser stamp sans avoir vérifié la structure réelle de la table users.
