@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+
+{% block title %}Mon profil — BLOOPS{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/profile.css') }}">
+{% endblock %}
+
+{% block content %}
+<section class="profile-page">
+    <p class="eyebrow">PERSONNALISATION</p>
+    <h1>Mon profil</h1>
+    <p class="intro">Modifie les informations affichées sur ton compte BLOOPS.</p>
+
+    <form method="POST">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+        <label for="username">Pseudonyme</label>
+        <input id="username" name="username" value="{{ user.username }}"
+               minlength="3" maxlength="30" required>
+
+        <label for="email">Adresse e-mail</label>
+        <input id="email" value="{{ user.email }}" disabled>
+
+        <label for="birth_date">Date de naissance</label>
+        <input id="birth_date"
+               value="{{ user.birth_date.strftime('%d/%m/%Y') }}" disabled>
+
+        <label for="bio">Description</label>
+        <textarea id="bio" name="bio" maxlength="300">{{ user.bio or "" }}</textarea>
+
+        <label for="profile_visibility">Visibilité du profil</label>
+        <select id="profile_visibility" name="profile_visibility">
+            <option value="private" {% if user.profile_visibility == "private" %}selected{% endif %}>Privé</option>
+            <option value="public" {% if user.profile_visibility == "public" %}selected{% endif %}>Public</option>
+        </select>
+
+        <button type="submit">Enregistrer mon profil</button>
+    </form>
+</section>
+{% endblock %}
