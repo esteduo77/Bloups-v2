@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Mon espace — BLOOPS</title>
+    <link rel="stylesheet"
+          href="{{ url_for('static', filename='css/dashboard.css') }}">
+</head>
+<body>
+    <header class="topbar">
+        <a class="logo" href="/">BLOOPS<span>.</span></a>
+
+        <form method="POST"
+              action="{{ url_for('account.deconnexion') }}">
+            <input type="hidden" name="csrf_token"
+                   value="{{ csrf_token() }}">
+            <button type="submit" class="logout">
+                Déconnexion
+            </button>
+        </form>
+    </header>
+
+    <main class="dashboard">
+        <p class="eyebrow">TON ESPACE PERSONNEL</p>
+        <h1>Bienvenue, {{ user.username }} !</h1>
+        <p>Ton univers BLOOPS commence ici.</p>
+
+        <section class="dashboard-grid">
+            <article class="tile">
+                <span>✉️</span>
+                <h2>Messagerie</h2>
+                <p>À venir</p>
+            </article>
+
+            <article class="tile">
+                <span>☁️</span>
+                <h2>Stockage cloud</h2>
+                <p>À venir</p>
+            </article>
+
+            <article class="tile">
+                <span>📅</span>
+                <h2>Agenda</h2>
+                <p>À venir</p>
+            </article>
+
+            <article class="tile">
+                <span>🧩</span>
+                <h2>Automatiseur</h2>
+                <p>À venir</p>
+            </article>
+        </section>
+    </main>
+</body>
+</html>
