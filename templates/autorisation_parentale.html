@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Autorisation parentale - BLOOPS</title>
+</head>
+<body>
+    <main>
+        <h1>Autorisation parentale BLOOPS</h1>
+
+        {% if completed %}
+            <h2>Décision enregistrée</h2>
+            <p>
+                {% if decision == "approved" %}
+                    Ton accord a été enregistré.
+                {% else %}
+                    Ton refus a été enregistré.
+                {% endif %}
+            </p>
+        {% else %}
+            <p>
+                <strong>{{ sender.username }}</strong>
+                souhaite ajouter
+                <strong>{{ receiver.username }}</strong>
+                à ses contacts BLOOPS.
+            </p>
+
+            <p>
+                Cette demande nécessite l'accord des deux
+                représentants légaux.
+            </p>
+
+            <form method="POST">
+                <input
+                    type="hidden"
+                    name="csrf_token"
+                    value="{{ csrf_token() }}"
+                >
+
+                <button type="submit" name="decision" value="approved">
+                    Autoriser la demande
+                </button>
+
+                <button type="submit" name="decision" value="rejected">
+                    Refuser la demande
+                </button>
+            </form>
+        {% endif %}
+    </main>
+</body>
+</html>
