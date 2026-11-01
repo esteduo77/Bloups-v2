@@ -8,7 +8,7 @@ from models import db
 csrf = CSRFProtect()
 
 
-def create_app():
+def create_app(test_config=None):
     app = Flask(__name__)
 
     app.config["SECRET_KEY"] = os.environ.get(
@@ -20,8 +20,14 @@ def create_app():
             "La variable BLOOPS_SECRET_KEY doit être configurée."
         )
 
-    app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///bloups.db"
+    app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get(
+        "BLOOPS_DATABASE_URL",
+        "sqlite:///bloups.db"
+    )
     app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+
+    if test_config:
+        app.config.update(test_config)
 
     db.init_app(app)
     csrf.init_app(app)
