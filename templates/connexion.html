@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Connexion — BLOOPS</title>
+    <link rel="stylesheet"
+          href="{{ url_for('static', filename='css/auth.css') }}">
+</head>
+<body>
+<main class="auth-container">
+    <div class="auth-card">
+        <a href="/" class="logo">BLOOPS<span>.</span></a>
+
+        <h1>Content de te revoir !</h1>
+        <p class="subtitle">Connecte-toi à ton espace personnel.</p>
+
+        {% with messages = get_flashed_messages() %}
+            {% for message in messages %}
+                <p class="message">{{ message }}</p>
+            {% endfor %}
+        {% endwith %}
+
+        <form method="POST">
+            <input type="hidden" name="csrf_token"
+                   value="{{ csrf_token() }}">
+
+            <label for="identifier">Pseudo ou adresse e-mail</label>
+            <input id="identifier" name="identifier"
+                   type="text" autocomplete="username" required>
+
+            <label for="password">Mot de passe</label>
+            <input id="password" name="password"
+                   type="password"
+                   autocomplete="current-password" required>
+
+            <button type="submit">Se connecter</button>
+        </form>
+
+        <p class="footer-text">
+            Pas encore de compte ?
+            <a href="{{ url_for('auth.inscription') }}">
+                Créer un compte
+            </a>
+        </p>
+    </div>
+</main>
+</body>
+</html>
