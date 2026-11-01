@@ -57,9 +57,11 @@ def create_app(test_config=None):
     from models.parental_approval import ParentalApproval
     from routes.auth import auth
     from routes.account import account
+    from routes.contacts import contacts
 
     app.register_blueprint(auth)
     app.register_blueprint(account)
+    app.register_blueprint(contacts)
 
     @app.route("/")
     def accueil():
