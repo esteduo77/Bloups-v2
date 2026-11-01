@@ -1,56 +1,47 @@
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Mon espace — BLOOPS</title>
-    <link rel="stylesheet"
-          href="{{ url_for('static', filename='css/dashboard.css') }}">
-</head>
-<body>
-    <header class="topbar">
-        <a class="logo" href="/">BLOOPS<span>.</span></a>
+{% extends "base.html" %}
 
-        <form method="POST"
-              action="{{ url_for('account.deconnexion') }}">
-            <input type="hidden" name="csrf_token"
-                   value="{{ csrf_token() }}">
-            <button type="submit" class="logout">
-                Déconnexion
-            </button>
-        </form>
-    </header>
+{% block title %}Mon espace — BLOOPS{% endblock %}
 
-    <main class="dashboard">
-        <p class="eyebrow">TON ESPACE PERSONNEL</p>
-        <h1>Bienvenue, {{ user.username }} !</h1>
-        <p>Ton univers BLOOPS commence ici.</p>
+{% block extra_css %}
+<link rel="stylesheet"
+      href="{{ url_for('static', filename='css/dashboard.css') }}">
+{% endblock %}
 
-        <section class="dashboard-grid">
-            <article class="tile">
-                <span>✉️</span>
-                <h2>Messagerie</h2>
-                <p>À venir</p>
-            </article>
+{% block content %}
+<section class="dashboard">
+    <p class="eyebrow">TON ESPACE PERSONNEL</p>
+    <h1>Bienvenue, {{ user.username }} !</h1>
+    <p>Ton univers BLOOPS commence ici.</p>
 
-            <article class="tile">
-                <span>☁️</span>
-                <h2>Stockage cloud</h2>
-                <p>À venir</p>
-            </article>
+    <section class="dashboard-grid">
+        <article class="tile">
+            <span>✉️</span>
+            <h2>Messagerie</h2>
+            <p>À venir</p>
+        </article>
 
-            <article class="tile">
-                <span>📅</span>
-                <h2>Agenda</h2>
-                <p>À venir</p>
-            </article>
+        <article class="tile">
+            <span>☁️</span>
+            <h2>Stockage cloud</h2>
+            <p>À venir</p>
+        </article>
 
-            <article class="tile">
-                <span>🧩</span>
-                <h2>Automatiseur</h2>
-                <p>À venir</p>
-            </article>
-        </section>
-    </main>
-</body>
-</html>
+        <article class="tile">
+            <span>📅</span>
+            <h2>Agenda</h2>
+            <p>À venir</p>
+        </article>
+
+        <article class="tile">
+            <span>🧩</span>
+            <h2>Automatiseur</h2>
+            <p>À venir</p>
+        </article>
+    </section>
+
+    <section class="account-shortcuts">
+        <a href="{{ url_for('account.profil') }}">Personnaliser mon profil</a>
+        <a href="{{ url_for('account.parametres') }}">Gérer la sécurité de mon compte</a>
+    </section>
+</section>
+{% endblock %}
