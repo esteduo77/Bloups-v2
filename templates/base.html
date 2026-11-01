@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#1768e8">
+    <title>{% block title %}BLOOPS{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/base.css') }}">
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+    <header class="topbar">
+        <a class="logo" href="/">BLOOPS<span>.</span></a>
+        {% if session.get("user_id") %}
+        <nav class="main-nav" aria-label="Navigation du compte">
+            <a href="{{ url_for('account.mon_espace') }}">Accueil</a>
+            <a href="{{ url_for('account.profil') }}">Mon profil</a>
+            <a href="{{ url_for('account.parametres') }}">Paramètres</a>
+        </nav>
+        <form method="POST" action="{{ url_for('account.deconnexion') }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button class="logout" type="submit">Déconnexion</button>
+        </form>
+        {% endif %}
+    </header>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+        <section class="messages" aria-live="polite">
+            {% for category, message in messages %}
+            <p class="message {{ category }}">{{ message }}</p>
+            {% endfor %}
+        </section>
+        {% endif %}
+    {% endwith %}
+
+    <main>{% block content %}{% endblock %}</main>
+    <footer class="site-footer">
+        <p>© BLOOPS — Ton univers numérique.</p>
+    </footer>
+</body>
+</html>
