@@ -47,10 +47,20 @@ class User(db.Model):
     )
 
     email_verified_at = db.Column(db.DateTime(timezone=True))
-
     guardian_email = db.Column(db.String(254))
-
     guardian_consent_at = db.Column(db.DateTime(timezone=True))
+
+    bio = db.Column(
+        db.String(300),
+        nullable=False,
+        default=""
+    )
+
+    profile_visibility = db.Column(
+        db.String(10),
+        nullable=False,
+        default="private"
+    )
 
     created_at = db.Column(
         db.DateTime(timezone=True),
