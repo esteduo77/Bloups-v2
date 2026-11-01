@@ -3,26 +3,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
     <title>Créer un compte — BLOOPS</title>
-
     <link rel="stylesheet"
           href="{{ url_for('static', filename='css/auth.css') }}">
 </head>
-
 <body>
-
     <main class="auth-container">
-
         <div class="auth-card">
-
             <a href="/" class="logo">BLOOPS<span>.</span></a>
-
             <h1>Rejoins BLOOPS !</h1>
-
-            <p class="subtitle">
-                Crée ton espace numérique personnel.
-            </p>
+            <p class="subtitle">Crée ton espace numérique personnel.</p>
 
             {% with messages = get_flashed_messages() %}
                 {% if messages %}
@@ -33,64 +23,43 @@
             {% endwith %}
 
             <form method="POST">
-
-                <input type="hidden"
-                       name="csrf_token"
+                <input type="hidden" name="csrf_token"
                        value="{{ csrf_token() }}">
 
                 <label for="username">Pseudo</label>
-                <input id="username"
-                       type="text"
-                       name="username"
-                       minlength="3"
-                       maxlength="30"
-                       required>
+                <input id="username" type="text" name="username"
+                       minlength="3" maxlength="30" required>
 
                 <label for="email">Adresse e-mail</label>
-                <input id="email"
-                       type="email"
-                       name="email"
-                       maxlength="254"
-                       required>
+                <input id="email" type="email" name="email"
+                       maxlength="254" required>
 
                 <label for="password">Mot de passe</label>
-                <input id="password"
-                       type="password"
-                       name="password"
-                       minlength="12"
-                       autocomplete="new-password"
-                       required>
+                <input id="password" type="password" name="password"
+                       minlength="12" autocomplete="new-password" required>
 
                 <label for="birth_date">Date de naissance</label>
-                <input id="birth_date"
-                       type="date"
-                       name="birth_date"
-                       required>
+                <input id="birth_date" type="date" name="birth_date" required>
 
                 <label for="guardian_email">
-                    Adresse e-mail du représentant légal
+                    E-mail du représentant légal 1
                 </label>
+                <input id="guardian_email" type="email"
+                       name="guardian_email" maxlength="254">
 
-                <input id="guardian_email"
-                       type="email"
-                       name="guardian_email"
-                       maxlength="254">
+                <label for="guardian_email_2">
+                    E-mail du représentant légal 2
+                </label>
+                <input id="guardian_email_2" type="email"
+                       name="guardian_email_2" maxlength="254">
 
-                <button type="submit">
-                    Créer mon compte
-                </button>
-
+                <button type="submit">Créer mon compte</button>
             </form>
 
             <p class="footer-text">
-                Déjà inscrit ?
-                <a href="/connexion">Se connecter</a>
+                Déjà inscrit ? <a href="/connexion">Se connecter</a>
             </p>
-
         </div>
-
     </main>
-
 </body>
-
 </html>
