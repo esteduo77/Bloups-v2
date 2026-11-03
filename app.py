@@ -14,35 +14,25 @@ migrate = Migrate()
 
 def create_app(test_config=None):
     app = Flask(__name__)
-
-    app.config["SECRET_KEY"] = os.environ.get(
-        "BLOOPS_SECRET_KEY"
-    )
-
+    app.config["SECRET_KEY"] = os.environ.get("BLOOPS_SECRET_KEY")
     if not app.config["SECRET_KEY"]:
         raise RuntimeError(
             "La variable BLOOPS_SECRET_KEY doit être configurée."
         )
 
     app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get(
-        "BLOOPS_DATABASE_URL",
-        "sqlite:///bloups.db"
+        "BLOOPS_DATABASE_URL", "sqlite:///bloups.db"
     )
-
     app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
     app.config["PERMANENT_SESSION_LIFETIME"] = timedelta(hours=8)
     app.config["SESSION_COOKIE_HTTPONLY"] = True
     app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
-
     app.config["SESSION_COOKIE_SECURE"] = (
         os.environ.get("BLOOPS_COOKIE_SECURE", "0") == "1"
     )
-
     app.config["RATELIMIT_STORAGE_URI"] = os.environ.get(
-        "BLOOPS_RATE_LIMIT_STORAGE_URI",
-        "memory://"
+        "BLOOPS_RATE_LIMIT_STORAGE_URI", "memory://"
     )
-
     if test_config:
         app.config.update(test_config)
 
@@ -55,6 +45,7 @@ def create_app(test_config=None):
     from models.contact import Contact
     from models.contact_request import ContactRequest
     from models.parental_approval import ParentalApproval
+    from models.user_block import UserBlock
     from routes.auth import auth
     from routes.account import account
     from routes.contacts import contacts
@@ -82,8 +73,4 @@ app = create_app()
 
 
 if __name__ == "__main__":
-    app.run(
-        host="127.0.0.1",
-        port=5000,
-        debug=False
-    )
+    app.run(host="127.0.0.1", port=5000, debug=False)
