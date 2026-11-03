@@ -12,6 +12,7 @@ from models.user import User
 from models.contact import Contact
 from models.contact_request import ContactRequest
 from models.parental_approval import ParentalApproval
+from models.user_block import UserBlock
 
 from extensions import limiter
 from routes.account import get_current_user
@@ -22,7 +23,10 @@ from services.contact_service import (
     reject_contact_request,
     cancel_contact_request,
     decide_parental_approval,
-    parental_approvals_complete
+    parental_approvals_complete,
+    block_user,
+    unblock_user,
+    get_blocked_users
 )
 from services.contact_notifications import (
     send_guardian_approval,
@@ -51,11 +55,25 @@ def rechercher():
             "message": "Saisis au moins deux caractères."
         })
 
-    users = User.query.filter(
+    block_rows = UserBlock.query.filter(
+        or_(
+            UserBlock.blocker_id == user.id,
+            UserBlock.blocked_user_id == user.id
+        )
+    ).all()
+    blocked_ids = {
+        row.blocked_user_id if row.blocker_id == user.id else row.blocker_id
+        for row in block_rows
+    }
+
+    query = User.query.filter(
         User.is_active.is_(True),
         User.id != user.id,
         User.username.ilike(f"%{term}%")
-    ).limit(20).all()
+    )
+    if blocked_ids:
+        query = query.filter(~User.id.in_(blocked_ids))
+    users = query.limit(20).all()
 
     return jsonify({
         "results": [
@@ -122,6 +140,59 @@ def demander(user_id):
             "Erreur lors de la création d'une demande de contact."
         )
         return jsonify({"error": "Une erreur interne est survenue."}), 500
+
+
+
+@contacts.route("/bloquer/<int:user_id>", methods=["POST"])
+@limiter.limit("20 per hour")
+def bloquer(user_id):
+    user = require_user()
+    if not user:
+        return jsonify({"error": "Connexion requise."}), 401
+    blocked = db.session.get(User, user_id)
+    if not blocked:
+        return jsonify({"error": "Utilisateur introuvable."}), 404
+    try:
+        block_user(user, blocked)
+        return jsonify({"message": "Utilisateur bloqué."}), 200
+    except ValueError as error:
+        db.session.rollback()
+        return jsonify({"error": str(error)}), 400
+    except Exception:
+        db.session.rollback()
+        current_app.logger.exception("Erreur de blocage.")
+        return jsonify({"error": "Erreur interne."}), 500
+
+
+@contacts.route("/debloquer/<int:user_id>", methods=["POST"])
+@limiter.limit("20 per hour")
+def debloquer(user_id):
+    user = require_user()
+    if not user:
+        return jsonify({"error": "Connexion requise."}), 401
+    blocked = db.session.get(User, user_id)
+    if not blocked:
+        return jsonify({"error": "Utilisateur introuvable."}), 404
+    try:
+        unblock_user(user, blocked)
+        return jsonify({"message": "Utilisateur débloqué."}), 200
+    except ValueError as error:
+        db.session.rollback()
+        return jsonify({"error": str(error)}), 400
+
+
+@contacts.route("/bloques", methods=["GET"])
+def utilisateurs_bloques():
+    user = require_user()
+    if not user:
+        return jsonify({"error": "Connexion requise."}), 401
+    users = get_blocked_users(user)
+    return jsonify({
+        "blocked_users": [
+            {"id": item.id, "username": item.username}
+            for item in users
+        ]
+    })
 
 
 @contacts.route("/mes-contacts", methods=["GET"])
