@@ -8,6 +8,9 @@ from models.contact_request import ContactRequest
 from models.parental_approval import ParentalApproval
 from models.user import User
 from models.user_block import UserBlock
+from services.contact_notifications import (
+    send_contact_request_ready_notification
+)
 
 
 def calculate_age(birth_date):
@@ -196,7 +199,10 @@ def decide_parental_approval(approval, decision):
     if approval.status != "pending":
         raise ValueError("Cette autorisation a déjà été traitée.")
 
-    contact_request = db.session.get(ContactRequest, approval.request_id)
+    contact_request = db.session.get(
+        ContactRequest,
+        approval.request_id
+    )
     if not contact_request or contact_request.status != "pending":
         raise ValueError("Cette demande n'est plus active.")
 
@@ -212,6 +218,25 @@ def decide_parental_approval(approval, decision):
         ).all():
             other.status = "rejected"
             other.decided_at = now
+
+    elif decision == "approved":
+        approvals = ParentalApproval.query.filter_by(
+            request_id=contact_request.id
+        ).all()
+
+        if (
+            len(approvals) == 2
+            and all(item.status == "approved" for item in approvals)
+        ):
+            sender = db.session.get(User, contact_request.sender_id)
+            receiver = db.session.get(User, contact_request.receiver_id)
+
+            if sender and receiver:
+                send_contact_request_ready_notification(
+                    contact_request,
+                    sender,
+                    receiver
+                )
 
     db.session.commit()
 
