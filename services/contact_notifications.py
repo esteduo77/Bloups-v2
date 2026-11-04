@@ -85,6 +85,35 @@ def send_contact_request_ready_notification(contact_request, sender, receiver):
     )
 
 
+def send_contact_request_rejected_notification(
+    contact_request,
+    sender,
+    reason
+):
+    if reason == "parental":
+        subject = "Autorisation parentale refusée — BLOOPS"
+        body = (
+            "L'autorisation nécessaire à ta demande de contact "
+            "n'a pas été accordée.\n\n"
+            "La demande a donc été clôturée."
+        )
+    elif reason == "receiver":
+        subject = "Demande de contact refusée — BLOOPS"
+        body = (
+            "Ta demande de contact n'a pas été acceptée.\n\n"
+            "Tu peux consulter tes demandes depuis ton espace BLOOPS."
+        )
+    else:
+        raise ValueError("Motif de refus invalide.")
+
+    enqueue_email(
+        sender.email,
+        subject,
+        body,
+        f"contact-rejected-{contact_request.id}"
+    )
+
+
 def process_email_queue(limit=50):
     now = datetime.now(timezone.utc)
     messages = (
