@@ -47,6 +47,9 @@ def create_app(test_config=None):
     from models.parental_approval import ParentalApproval
     from models.user_block import UserBlock
     from models.email_outbox import EmailOutbox
+    from models.family_group import FamilyGroup
+    from models.family_membership import FamilyMembership
+    from routes.family import family
     from routes.auth import auth
     from routes.account import account
     from routes.contacts import contacts
@@ -54,6 +57,7 @@ def create_app(test_config=None):
     app.register_blueprint(auth)
     app.register_blueprint(account)
     app.register_blueprint(contacts)
+    app.register_blueprint(family)
 
     @app.cli.command("process-email-queue")
     def process_email_queue_command():
