@@ -196,6 +196,7 @@ def create_contact_request(sender, receiver):
 def decide_parental_approval(approval, decision):
     if decision not in ("approved", "rejected"):
         raise ValueError("Décision invalide.")
+
     if approval.status != "pending":
         raise ValueError("Cette autorisation a déjà été traitée.")
 
@@ -203,6 +204,7 @@ def decide_parental_approval(approval, decision):
         ContactRequest,
         approval.request_id
     )
+
     if not contact_request or contact_request.status != "pending":
         raise ValueError("Cette demande n'est plus active.")
 
@@ -210,8 +212,12 @@ def decide_parental_approval(approval, decision):
     approval.status = decision
     approval.decided_at = now
 
+    sender = db.session.get(User, contact_request.sender_id)
+    receiver = db.session.get(User, contact_request.receiver_id)
+
     if decision == "rejected":
         contact_request.status = "rejected"
+
         for other in ParentalApproval.query.filter_by(
             request_id=contact_request.id,
             status="pending"
@@ -219,7 +225,17 @@ def decide_parental_approval(approval, decision):
             other.status = "rejected"
             other.decided_at = now
 
-    elif decision == "approved":
+        if sender:
+            from services.contact_notifications import (
+                send_contact_request_rejected_notification
+            )
+            send_contact_request_rejected_notification(
+                contact_request,
+                sender,
+                reason="parental"
+            )
+
+    else:
         approvals = ParentalApproval.query.filter_by(
             request_id=contact_request.id
         ).all()
@@ -227,16 +243,14 @@ def decide_parental_approval(approval, decision):
         if (
             len(approvals) == 2
             and all(item.status == "approved" for item in approvals)
+            and sender
+            and receiver
         ):
-            sender = db.session.get(User, contact_request.sender_id)
-            receiver = db.session.get(User, contact_request.receiver_id)
-
-            if sender and receiver:
-                send_contact_request_ready_notification(
-                    contact_request,
-                    sender,
-                    receiver
-                )
+            send_contact_request_ready_notification(
+                contact_request,
+                sender,
+                receiver
+            )
 
     db.session.commit()
 
@@ -280,10 +294,45 @@ def accept_contact_request(contact_request, receiver):
 
 def reject_contact_request(contact_request, receiver):
     if contact_request.receiver_id != receiver.id:
-        raise PermissionError("Tu ne peux pas refuser cette demande.")
+        raise PermissionError(
+            "Tu ne peux pas refuser cette demande."
+        )
+
     if contact_request.status != "pending":
-        raise ValueError("Cette demande n'est plus en attente.")
+        raise ValueError(
+            "Cette demande n'est plus en attente."
+        )
+
+    if is_blocked_between(
+        contact_request.sender_id,
+        contact_request.receiver_id
+    ):
+        raise PermissionError(
+            "Cette demande ne peut plus être refusée."
+        )
+
+    now = datetime.now(timezone.utc)
     contact_request.status = "rejected"
+
+    for approval in ParentalApproval.query.filter_by(
+        request_id=contact_request.id,
+        status="pending"
+    ).all():
+        approval.status = "rejected"
+        approval.decided_at = now
+
+    sender = db.session.get(User, contact_request.sender_id)
+
+    if sender:
+        from services.contact_notifications import (
+            send_contact_request_rejected_notification
+        )
+        send_contact_request_rejected_notification(
+            contact_request,
+            sender,
+            reason="receiver"
+        )
+
     db.session.commit()
 
 
