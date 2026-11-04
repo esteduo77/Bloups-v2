@@ -46,6 +46,7 @@ def create_app(test_config=None):
     from models.contact_request import ContactRequest
     from models.parental_approval import ParentalApproval
     from models.user_block import UserBlock
+    from models.email_outbox import EmailOutbox
     from routes.auth import auth
     from routes.account import account
     from routes.contacts import contacts
@@ -53,6 +54,18 @@ def create_app(test_config=None):
     app.register_blueprint(auth)
     app.register_blueprint(account)
     app.register_blueprint(contacts)
+
+    @app.cli.command("process-email-queue")
+    def process_email_queue_command():
+        """Traite les e-mails en attente."""
+        from services.contact_notifications import process_email_queue
+
+        result = process_email_queue(limit=50)
+        print(
+            f"E-mails traités : {result['processed']} | "
+            f"Envoyés : {result['sent']} | "
+            f"Échecs définitifs : {result['failed']}"
+        )
 
     @app.route("/")
     def accueil():
