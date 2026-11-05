@@ -155,3 +155,21 @@ def process_email_queue(limit=50):
         db.session.commit()
 
     return {"sent": sent, "failed": failed, "processed": len(messages)}
+
+
+
+def send_family_parent_invitation_notification(membership, family, inviter, invitee):
+    enqueue_email(
+        invitee.email,
+        "Invitation à rejoindre un espace famille — BLOOPS",
+        (
+            f"{inviter.username} t'invite à rejoindre l'espace famille "
+            f"« {family.name} » en tant que second responsable.\n\n"
+            "Connecte-toi à ton compte BLOOPS pour accepter ou refuser "
+            "cette invitation depuis la rubrique Famille.\n\n"
+            "L'acceptation de l'invitation ne constitue pas, à elle seule, "
+            "une vérification du lien légal de responsabilité."
+        ),
+        f"family-parent-invitation-{membership.id}"
+    )
+    db.session.commit()
