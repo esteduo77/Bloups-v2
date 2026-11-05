@@ -11,10 +11,14 @@ from services.family_service import (
     invite_child,
     accept_child_invitation,
     get_family_members,
-    get_my_pending_invitations
+    get_my_pending_invitations,
+    invite_second_parent,
+    accept_parent_invitation,
+    decline_parent_invitation
 )
 
 from extensions import limiter
+from services.contact_notifications import send_family_parent_invitation_notification
 
 
 family = Blueprint("family", __name__, url_prefix="/famille")
@@ -152,7 +156,8 @@ def invitations():
         results.append({
             "membership_id": membership.id,
             "family_name": group.name if group else "Groupe familial",
-            "invited_by": parent.username if parent else "Compte indisponible"
+            "invited_by": parent.username if parent else "Compte indisponible",
+            "role": membership.member_role
         })
 
     return jsonify({"invitations": results})
@@ -222,3 +227,126 @@ def membres(family_id):
 
     except PermissionError as error:
         return jsonify({"error": str(error)}), 403
+
+
+
+@family.route("/<int:family_id>/inviter-responsable", methods=["POST"])
+@limiter.limit("5 per hour")
+def inviter_responsable(family_id):
+    user = require_user()
+
+    if not user:
+        return jsonify({"error": "Connexion requise."}), 401
+
+    data = request.get_json(silent=True) or {}
+
+    try:
+        membership = invite_second_parent(
+            family_id,
+            user,
+            data.get("email", "")
+        )
+
+        family_group = db.session.get(FamilyGroup, family_id)
+        invitee = db.session.get(User, membership.user_id)
+
+        try:
+            send_family_parent_invitation_notification(
+                membership,
+                family_group,
+                user,
+                invitee
+            )
+        except Exception:
+            current_app.logger.exception(
+                "Impossible de mettre en file l'e-mail d'invitation du second responsable."
+            )
+
+        return jsonify({
+            "message": (
+                "Invitation créée. Elle est disponible dans l'espace Famille "
+                "du compte invité."
+            ),
+            "membership_id": membership.id,
+            "status": membership.status
+        }), 201
+
+    except PermissionError as error:
+        db.session.rollback()
+        return jsonify({"error": str(error)}), 403
+
+    except ValueError as error:
+        db.session.rollback()
+        return jsonify({"error": str(error)}), 400
+
+    except Exception:
+        db.session.rollback()
+        current_app.logger.exception(
+            "Erreur lors de l'invitation d'un second responsable."
+        )
+        return jsonify({"error": "Erreur interne."}), 500
+
+
+@family.route(
+    "/invitations/<int:membership_id>/accepter-responsable",
+    methods=["POST"]
+)
+@limiter.limit("10 per hour")
+def accepter_invitation_responsable(membership_id):
+    user = require_user()
+
+    if not user:
+        return jsonify({"error": "Connexion requise."}), 401
+
+    try:
+        accept_parent_invitation(membership_id, user)
+        return jsonify({
+            "message": "Invitation au groupe familial acceptée.",
+            "relationship_verified": False
+        })
+
+    except PermissionError as error:
+        db.session.rollback()
+        return jsonify({"error": str(error)}), 403
+
+    except ValueError as error:
+        db.session.rollback()
+        return jsonify({"error": str(error)}), 400
+
+    except Exception:
+        db.session.rollback()
+        current_app.logger.exception(
+            "Erreur lors de l'acceptation d'une invitation de responsable."
+        )
+        return jsonify({"error": "Erreur interne."}), 500
+
+
+@family.route(
+    "/invitations/<int:membership_id>/refuser-responsable",
+    methods=["POST"]
+)
+@limiter.limit("10 per hour")
+def refuser_invitation_responsable(membership_id):
+    user = require_user()
+
+    if not user:
+        return jsonify({"error": "Connexion requise."}), 401
+
+    try:
+        decline_parent_invitation(membership_id, user)
+        return jsonify({"message": "Invitation refusée."})
+
+    except PermissionError as error:
+        db.session.rollback()
+        return jsonify({"error": str(error)}), 403
+
+    except ValueError as error:
+        db.session.rollback()
+        return jsonify({"error": str(error)}), 400
+
+    except Exception:
+        db.session.rollback()
+        current_app.logger.exception(
+            "Erreur lors du refus d'une invitation de responsable."
+        )
+        return jsonify({"error": "Erreur interne."}), 500
