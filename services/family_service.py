@@ -1,5 +1,7 @@
 from datetime import date, datetime, timezone
 
+from sqlalchemy import func
+
 from models import db
 from models.user import User
 from models.family_group import FamilyGroup
@@ -183,9 +185,148 @@ def get_family_members(family_id, user):
     ).all()
 
 
+def invite_second_parent(family_id, inviter, email):
+    family = db.session.get(FamilyGroup, family_id)
+
+    if not family or not family.is_active:
+        raise ValueError("Groupe familial introuvable.")
+
+    if family.created_by_id != inviter.id:
+        raise PermissionError(
+            "Seul le créateur du groupe peut inviter un second responsable."
+        )
+
+    if not inviter.is_active or not inviter.birth_date:
+        raise PermissionError("Compte responsable invalide.")
+
+    if calculate_age(inviter.birth_date) < 18:
+        raise PermissionError("Un compte adulte est nécessaire.")
+
+    if not get_active_parent_membership(family_id, inviter.id):
+        raise PermissionError("Tu n'es pas responsable actif de ce groupe.")
+
+    email = (email or "").strip().lower()
+    if not email:
+        raise ValueError("Adresse e-mail obligatoire.")
+
+    invitee = User.query.filter(
+        func.lower(User.email) == email,
+        User.is_active.is_(True)
+    ).first()
+
+    if not invitee:
+        raise ValueError("Aucun compte actif ne correspond à cette adresse.")
+
+    if invitee.id == inviter.id:
+        raise ValueError("Tu ne peux pas t'inviter toi-même.")
+
+    if not invitee.birth_date or calculate_age(invitee.birth_date) < 18:
+        raise ValueError("Le second responsable doit être majeur.")
+
+    if not invitee.email_verified_at:
+        raise ValueError("L'adresse e-mail du compte doit être vérifiée.")
+
+    existing_membership = FamilyMembership.query.filter_by(
+        family_id=family_id,
+        user_id=invitee.id
+    ).first()
+
+    if existing_membership and existing_membership.member_role == "child":
+        raise ValueError("Ce compte est déjà associé comme enfant à ce groupe.")
+
+    parent_count = FamilyMembership.query.filter_by(
+        family_id=family_id,
+        member_role="parent"
+    ).filter(
+        FamilyMembership.status.in_(["active", "pending"])
+    ).count()
+
+    if parent_count >= 2 and not (
+        existing_membership and existing_membership.status == "revoked"
+    ):
+        raise ValueError("Ce groupe possède déjà deux responsables.")
+
+    if existing_membership:
+        if existing_membership.status == "pending":
+            raise ValueError("Une invitation est déjà en attente.")
+        if existing_membership.status == "active":
+            raise ValueError("Ce compte est déjà responsable de ce groupe.")
+
+        existing_membership.member_role = "parent"
+        existing_membership.status = "pending"
+        existing_membership.invited_by_id = inviter.id
+        existing_membership.accepted_at = None
+        existing_membership.relationship_verified_at = None
+        existing_membership.created_at = datetime.now(timezone.utc)
+        membership = existing_membership
+    else:
+        membership = FamilyMembership(
+            family_id=family_id,
+            user_id=invitee.id,
+            invited_by_id=inviter.id,
+            member_role="parent",
+            status="pending"
+        )
+        db.session.add(membership)
+
+    db.session.commit()
+    return membership
+
+
+def accept_parent_invitation(membership_id, invitee):
+    membership = db.session.get(FamilyMembership, membership_id)
+
+    if not membership:
+        raise ValueError("Invitation introuvable.")
+    if membership.user_id != invitee.id:
+        raise PermissionError("Cette invitation ne t'est pas destinée.")
+    if membership.member_role != "parent":
+        raise ValueError("Type d'invitation invalide.")
+    if membership.status != "pending":
+        raise ValueError("Cette invitation n'est plus en attente.")
+
+    family = db.session.get(FamilyGroup, membership.family_id)
+    if not family or not family.is_active:
+        raise ValueError("Ce groupe familial n'est plus actif.")
+    if membership.invited_by_id != family.created_by_id:
+        raise PermissionError("Invitation non autorisée.")
+    if not invitee.is_active or not invitee.birth_date:
+        raise PermissionError("Compte responsable invalide.")
+    if calculate_age(invitee.birth_date) < 18:
+        raise PermissionError("Un compte adulte est nécessaire.")
+    if not invitee.email_verified_at:
+        raise PermissionError("L'adresse e-mail doit être vérifiée.")
+
+    membership.status = "active"
+    membership.accepted_at = datetime.now(timezone.utc)
+
+    # L'acceptation et la vérification de l'e-mail ne prouvent pas
+    # le lien légal de responsabilité.
+    membership.relationship_verified_at = None
+
+    db.session.commit()
+    return membership
+
+
+def decline_parent_invitation(membership_id, invitee):
+    membership = db.session.get(FamilyMembership, membership_id)
+
+    if not membership:
+        raise ValueError("Invitation introuvable.")
+    if membership.user_id != invitee.id:
+        raise PermissionError("Cette invitation ne t'est pas destinée.")
+    if membership.member_role != "parent":
+        raise ValueError("Type d'invitation invalide.")
+    if membership.status != "pending":
+        raise ValueError("Cette invitation n'est plus en attente.")
+
+    membership.status = "revoked"
+    db.session.commit()
+    return membership
+
+
 def get_my_pending_invitations(user):
     return FamilyMembership.query.filter_by(
         user_id=user.id,
-        member_role="child",
         status="pending"
     ).all()
