@@ -13,7 +13,10 @@ MAX_ATTEMPTS = 8
 
 
 def enqueue_email(recipient, subject, body, dedupe_key):
-    existing = EmailOutbox.query.filter_by(dedupe_key=dedupe_key).first()
+    existing = EmailOutbox.query.filter_by(
+        dedupe_key=dedupe_key
+    ).first()
+
     if existing:
         return existing
 
@@ -24,15 +27,18 @@ def enqueue_email(recipient, subject, body, dedupe_key):
         dedupe_key=dedupe_key,
         status="pending"
     )
-    db.session.add(message)
 
     try:
-        db.session.flush()
-    except IntegrityError:
-        db.session.rollback()
-        return EmailOutbox.query.filter_by(dedupe_key=dedupe_key).first()
+        with db.session.begin_nested():
+            db.session.add(message)
+            db.session.flush()
 
-    return message
+        return message
+
+    except IntegrityError:
+        return EmailOutbox.query.filter_by(
+            dedupe_key=dedupe_key
+        ).first()
 
 
 def send_guardian_approval(approval):
@@ -59,15 +65,19 @@ def send_guardian_approval(approval):
     )
 
 
-def send_contact_request_notification(receiver, sender):
+def send_contact_request_notification(
+    receiver,
+    sender,
+    contact_request_id
+):
     enqueue_email(
         receiver.email,
         "Nouvelle demande de contact — BLOOPS",
         (
-            f"{sender.username} souhaite vous ajouter à vos contacts.\n\n"
+            f"{sender.username} souhaite vous ajouter à vos contacts.\\n\\n"
             "Connectez-vous à BLOOPS pour consulter cette demande."
         ),
-        f"contact-request-{sender.id}-{receiver.id}"
+        f"contact-request-{contact_request_id}"
     )
 
 
