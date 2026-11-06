@@ -241,6 +241,7 @@ async function loadGroups() {
 
             card.append(childForm);
 
+            if (group["can_invite_second_parent"]) {
             card.append(
                 createElement("h4", "Inviter un deuxième responsable")
             );
@@ -274,6 +275,7 @@ async function loadGroups() {
             });
 
             card.append(parentForm);
+            }
         }
 
         container.append(card);
