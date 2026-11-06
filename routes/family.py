@@ -14,7 +14,8 @@ from services.family_service import (
     get_my_pending_invitations,
     invite_second_parent,
     accept_parent_invitation,
-    decline_parent_invitation
+    decline_parent_invitation,
+    calculate_age
 )
 
 from extensions import limiter
@@ -31,7 +32,11 @@ def espace():
     if not user:
         return redirect(url_for("account.connexion"))
 
-    return render_template("famille.html", user=user)
+    return render_template(
+        "famille.html",
+        user=user,
+        can_create_family=calculate_age(user.birth_date) >= 18
+    )
 
 
 def require_user():
@@ -97,7 +102,10 @@ def mes_groupes():
             results.append({
                 "id": group.id,
                 "name": group.name,
-                "my_role": membership.member_role
+                "my_role": membership.member_role,
+                "can_invite_second_parent": (
+                    group.created_by_id == user.id
+                )
             })
 
     return jsonify({"families": results})
