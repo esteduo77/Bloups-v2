@@ -29,14 +29,16 @@ def app():
         db.drop_all()
 
 
-def create_minor():
+def create_minor(second_guardian=True):
     user = User(
         username="testeur13",
         email="testeur@example.com",
         password_hash="hash-test",
         birth_date=date(2013, 1, 1),
         guardian_email="parent1@example.com",
-        guardian_email_2="parent2@example.com",
+        guardian_email_2=(
+            "parent2@example.com" if second_guardian else None
+        ),
         email_verified_at=datetime.now(timezone.utc),
         is_active=False,
         account_status="pending_parent"
@@ -46,12 +48,13 @@ def create_minor():
     return user
 
 
-def test_un_seul_parent_ne_suffit_pas(app):
+def test_un_seul_parent_suffit(app):
     with app.app_context():
-        user = create_minor()
+        user = create_minor(second_guardian=False)
         user.guardian_consent_1_at = datetime.now(timezone.utc)
         activate_if_ready(user)
-        assert user.is_active is False
+        assert user.is_active is True
+        assert user.account_status == "active"
 
 
 def test_deux_parents_et_email_activent_le_compte(app):
