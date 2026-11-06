@@ -111,8 +111,8 @@ def demander(user_id):
 
             return jsonify({
                 "message": (
-                    "Demande créée. Les deux représentants légaux "
-                    "doivent donner leur accord."
+                    "Demande créée. Le représentant légal "
+                    "doit donner son accord."
                 ),
                 "request_id": contact_request.id,
                 "parental_approval_required": True
