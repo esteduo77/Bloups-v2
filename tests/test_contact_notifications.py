@@ -151,3 +151,34 @@ def test_un_seul_accord_parental_notifie_le_destinataire(app):
 
         assert notification.recipient == receiver.email
         assert notification.status == "pending"
+
+
+
+def test_deux_demandes_distinctes_generent_deux_notifications(app):
+    with app.app_context():
+        from services.contact_notifications import (
+            send_contact_request_notification
+        )
+
+        sender = make_user("alice")
+        receiver = make_user("bob")
+
+        send_contact_request_notification(receiver, sender, 101)
+        send_contact_request_notification(receiver, sender, 102)
+
+        assert EmailOutbox.query.count() == 2
+
+
+def test_meme_demande_ne_genere_pas_de_doublon(app):
+    with app.app_context():
+        from services.contact_notifications import (
+            send_contact_request_notification
+        )
+
+        sender = make_user("alice")
+        receiver = make_user("bob")
+
+        send_contact_request_notification(receiver, sender, 101)
+        send_contact_request_notification(receiver, sender, 101)
+
+        assert EmailOutbox.query.count() == 1
