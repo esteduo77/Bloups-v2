@@ -16,6 +16,7 @@
             <a href="{{ url_for('account.mon_espace') }}">Accueil</a>
             <a href="{{ url_for('account.profil') }}">Mon profil</a>
             <a href="{{ url_for('account.parametres') }}">Paramètres</a>
+            <a href="{{ url_for('family.espace') }}">Famille</a>
         </nav>
         <form method="POST" action="{{ url_for('account.deconnexion') }}">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
