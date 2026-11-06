@@ -19,6 +19,7 @@
 
     <div id="family-message" role="status" aria-live="polite"></div>
 
+    {% if can_create_family %}
     <section class="family-panel">
         <h2>Créer un groupe familial</h2>
         <form id="create-family-form">
@@ -28,6 +29,7 @@
             <button type="submit">Créer mon groupe</button>
         </form>
     </section>
+    {% endif %}
 
     <section class="family-panel">
         <h2>Mes invitations</h2>
