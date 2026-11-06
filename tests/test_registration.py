@@ -40,14 +40,17 @@ def birth_date_for_age(age):
         return date(today.year - age, today.month, today.day - 1)
 
 
-def create_test_user(age):
+def create_test_user(age, second_guardian=True):
     user = User(
         username=f"testeur{age}",
         email=f"testeur{age}@example.com",
         password_hash="hash-de-test",
         birth_date=birth_date_for_age(age),
         guardian_email="parent1@example.com" if age < 15 else None,
-        guardian_email_2="parent2@example.com" if age < 15 else None,
+        guardian_email_2=(
+            "parent2@example.com"
+            if age < 15 and second_guardian else None
+        ),
         account_status="pending_parent" if age < 15 else "pending_email",
         is_active=False,
     )
@@ -92,9 +95,11 @@ def test_mineur_reste_en_attente_apres_verification_email(app, client):
         assert user.is_active is False
 
 
-def test_un_seul_consentement_ne_suffit_pas(app, client):
+def test_un_seul_consentement_suffit_avec_email_verifie(app, client):
     with app.app_context():
-        user = create_test_user(13)
+        user = create_test_user(13, second_guardian=False)
+        user.email_verified_at = datetime.now(timezone.utc)
+        db.session.commit()
         token = make_token(app, "parent_consent_1", user.id)
         user_id = user.id
 
@@ -108,7 +113,20 @@ def test_un_seul_consentement_ne_suffit_pas(app, client):
         user = db.session.get(User, user_id)
         assert user.guardian_consent_1_at is not None
         assert user.guardian_consent_2_at is None
-        assert user.is_active is False
+        assert user.is_active is True
+        assert user.account_status == "active"
+
+
+def test_deuxieme_consentement_refuse_sans_deuxieme_adresse(app, client):
+    with app.app_context():
+        user = create_test_user(13, second_guardian=False)
+        token = make_token(app, "parent_consent_2", user.id)
+
+    response = client.post(
+        f"/consentement-parent/2/{token}",
+        data={"decision": "approved"}
+    )
+    assert response.status_code == 403
 
 
 def test_deux_consentements_et_email_activent_le_mineur(app, client):
