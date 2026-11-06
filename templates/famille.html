@@ -1,0 +1,310 @@
+{% extends "base.html" %}
+
+{% block title %}Espace Famille — BLOOPS{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet"
+      href="{{ url_for('static', filename='css/family.css') }}">
+{% endblock %}
+
+{% block content %}
+<meta name="csrf-token" content="{{ csrf_token() }}">
+
+<section class="family-page">
+    <header class="family-header">
+        <p class="eyebrow">BLOOPS FAMILY</p>
+        <h1>Mon espace Famille</h1>
+        <p>Bienvenue {{ user.username }} !</p>
+    </header>
+
+    <div id="family-message" role="status" aria-live="polite"></div>
+
+    <section class="family-panel">
+        <h2>Créer un groupe familial</h2>
+        <form id="create-family-form">
+            <label for="family-name">Nom du groupe</label>
+            <input id="family-name" name="name"
+                   minlength="2" maxlength="80" required>
+            <button type="submit">Créer mon groupe</button>
+        </form>
+    </section>
+
+    <section class="family-panel">
+        <h2>Mes invitations</h2>
+        <div id="family-invitations">
+            Chargement des invitations...
+        </div>
+    </section>
+
+    <section class="family-panel">
+        <h2>Mes groupes</h2>
+        <div id="family-groups">
+            Chargement des groupes...
+        </div>
+    </section>
+
+    <p class="family-notice">
+        Les fonctions de contrôle parental sensibles resteront
+        désactivées tant que le lien légal de responsabilité
+        n'aura pas été vérifié.
+    </p>
+</section>
+
+<script>
+const csrfToken = document.querySelector(
+    'meta[name="csrf-token"]'
+).content;
+
+const messageBox = document.getElementById("family-message");
+
+function showMessage(message, error = false) {
+    messageBox.textContent = message;
+    messageBox.className = error ? "family-error" : "family-success";
+}
+
+async function api(url, method = "GET", data = null) {
+    const options = {
+        method,
+        headers: {
+            "Accept": "application/json",
+            "X-CSRFToken": csrfToken
+        }
+    };
+
+    if (data !== null) {
+        options.headers["Content-Type"] = "application/json";
+        options.body = JSON.stringify(data);
+    }
+
+    const response = await fetch(url, options);
+    const result = await response.json().catch(() => ({}));
+
+    if (!response.ok) {
+        throw new Error(result.error || "Une erreur est survenue.");
+    }
+
+    return result;
+}
+
+function createElement(tag, text, className = "") {
+    const element = document.createElement(tag);
+    element.textContent = text;
+    if (className) element.className = className;
+    return element;
+}
+
+async function loadInvitations() {
+    const container = document.getElementById("family-invitations");
+    container.replaceChildren();
+
+    const result = await api("/famille/invitations");
+
+    if (!result.invitations.length) {
+        container.textContent = "Aucune invitation en attente.";
+        return;
+    }
+
+    result.invitations.forEach(invitation => {
+        const card = document.createElement("article");
+        card.className = "family-card";
+
+        card.append(
+            createElement("h3", invitation.family_name),
+            createElement("p", "Invité par : " + invitation.invited_by),
+            createElement(
+                "p",
+                invitation.role === "parent"
+                    ? "Invitation comme responsable"
+                    : "Invitation comme enfant"
+            )
+        );
+
+        const accept = createElement("button", "Accepter");
+        accept.type = "button";
+
+        accept.addEventListener("click", async () => {
+            try {
+                const endpoint = invitation.role === "parent"
+                    ? "accepter-responsable"
+                    : "accepter";
+
+                await api(
+                    `/famille/invitations/${invitation.membership_id}/${endpoint}`,
+                    "POST",
+                    {}
+                );
+
+                showMessage("Invitation acceptée.");
+                await refreshFamilyPage();
+            } catch (error) {
+                showMessage(error.message, true);
+            }
+        });
+
+        card.append(accept);
+
+        if (invitation.role === "parent") {
+            const decline = createElement("button", "Refuser");
+            decline.type = "button";
+            decline.className = "secondary-action";
+
+            decline.addEventListener("click", async () => {
+                try {
+                    await api(
+                        `/famille/invitations/${invitation.membership_id}/refuser-responsable`,
+                        "POST",
+                        {}
+                    );
+                    showMessage("Invitation refusée.");
+                    await refreshFamilyPage();
+                } catch (error) {
+                    showMessage(error.message, true);
+                }
+            });
+
+            card.append(decline);
+        }
+
+        container.append(card);
+    });
+}
+
+async function loadGroups() {
+    const container = document.getElementById("family-groups");
+    container.replaceChildren();
+
+    const result = await api("/famille/mes-groupes");
+
+    if (!result.families.length) {
+        container.textContent = "Tu ne fais partie d'aucun groupe.";
+        return;
+    }
+
+    for (const group of result.families) {
+        const card = document.createElement("article");
+        card.className = "family-card";
+
+        card.append(
+            createElement("h3", group.name),
+            createElement("p", "Ton rôle : " + group.my_role)
+        );
+
+        const membersTitle = createElement("h4", "Membres");
+        const membersList = document.createElement("ul");
+        const members = await api(
+            `/famille/${group.id}/membres`
+        );
+
+        members.members.forEach(member => {
+            membersList.append(
+                createElement(
+                    "li",
+                    `${member.username} — ${member.role} — ${member.status}`
+                )
+            );
+        });
+
+        card.append(membersTitle, membersList);
+
+        if (group.my_role === "parent") {
+            card.append(
+                createElement("h4", "Inviter un enfant")
+            );
+
+            const childForm = document.createElement("form");
+            const childInput = document.createElement("input");
+            childInput.name = "username";
+            childInput.placeholder = "Pseudonyme de l'enfant";
+            childInput.required = true;
+
+            const childButton = createElement("button", "Envoyer l'invitation");
+            childButton.type = "submit";
+
+            childForm.append(childInput, childButton);
+
+            childForm.addEventListener("submit", async event => {
+                event.preventDefault();
+                try {
+                    await api(
+                        `/famille/${group.id}/inviter-enfant`,
+                        "POST",
+                        {username: childInput.value}
+                    );
+                    showMessage("Invitation envoyée.");
+                    childForm.reset();
+                } catch (error) {
+                    showMessage(error.message, true);
+                }
+            });
+
+            card.append(childForm);
+
+            card.append(
+                createElement("h4", "Inviter un deuxième responsable")
+            );
+
+            const parentForm = document.createElement("form");
+            const emailInput = document.createElement("input");
+            emailInput.type = "email";
+            emailInput.name = "email";
+            emailInput.placeholder = "Adresse e-mail du responsable";
+            emailInput.required = true;
+
+            const parentButton = createElement("button", "Inviter");
+            parentButton.type = "submit";
+
+            parentForm.append(emailInput, parentButton);
+
+            parentForm.addEventListener("submit", async event => {
+                event.preventDefault();
+                try {
+                    await api(
+                        `/famille/${group.id}/inviter-responsable`,
+                        "POST",
+                        {email: emailInput.value}
+                    );
+                    showMessage("Invitation envoyée.");
+                    parentForm.reset();
+                    await refreshFamilyPage();
+                } catch (error) {
+                    showMessage(error.message, true);
+                }
+            });
+
+            card.append(parentForm);
+        }
+
+        container.append(card);
+    }
+}
+
+async function refreshFamilyPage() {
+    try {
+        await Promise.all([
+            loadInvitations(),
+            loadGroups()
+        ]);
+    } catch (error) {
+        showMessage(error.message, true);
+    }
+}
+
+document.getElementById("create-family-form")
+    .addEventListener("submit", async event => {
+        event.preventDefault();
+
+        const name = document.getElementById("family-name").value;
+
+        try {
+            await api("/famille/creer", "POST", {name});
+            showMessage("Groupe familial créé.");
+            event.target.reset();
+            await refreshFamilyPage();
+        } catch (error) {
+            showMessage(error.message, true);
+        }
+    });
+
+refreshFamilyPage();
+</script>
+{% endblock %}
