@@ -53,7 +53,7 @@ def send_guardian_approval(approval):
             "Une demande de contact nécessite votre autorisation.\n\n"
             f"Pour consulter la demande : {link}\n\n"
             "Ce lien expire après 48 heures. "
-            "Chaque représentant légal doit répondre séparément."
+            "Un seul représentant légal doit donner son accord."
         ),
         f"parental-approval-{approval.id}"
     )
@@ -76,8 +76,8 @@ def send_contact_request_ready_notification(contact_request, sender, receiver):
         receiver.email,
         "Demande de contact autorisée — BLOOPS",
         (
-            f"Les deux représentants légaux de {sender.username} "
-            "ont autorisé cette demande.\n\n"
+            f"Le représentant légal de {sender.username} "
+            "a autorisé cette demande.\n\n"
             "Connectez-vous à BLOOPS pour accepter ou refuser "
             "la demande de contact."
         ),
