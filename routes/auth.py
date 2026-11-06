@@ -37,10 +37,7 @@ def activate_if_ready(user):
     if age >= 15:
         parent_ok = True
     else:
-        parent_ok = (
-            user.guardian_consent_1_at is not None
-            and user.guardian_consent_2_at is not None
-        )
+        parent_ok = user.guardian_consent_1_at is not None
 
     if email_ok and parent_ok:
         user.account_status = "active"
@@ -149,28 +146,28 @@ def inscription():
             return redirect(url_for("auth.inscription"))
 
         if age < 15:
-            if not guardian_email or not guardian_email_2:
-                flash(
-                    "Les deux adresses des représentants légaux sont obligatoires."
-                )
+            if not guardian_email:
+                flash("L'adresse du représentant légal est obligatoire.")
                 return redirect(url_for("auth.inscription"))
 
             try:
                 guardian_email = validate_email(
                     guardian_email
                 ).normalized
-                guardian_email_2 = validate_email(
-                    guardian_email_2
-                ).normalized
+                if guardian_email_2:
+                    guardian_email_2 = validate_email(
+                        guardian_email_2
+                    ).normalized
             except EmailNotValidError:
                 flash("Une adresse parentale est invalide.")
                 return redirect(url_for("auth.inscription"))
 
-            if len({email, guardian_email, guardian_email_2}) != 3:
-                flash(
-                    "Les deux représentants légaux doivent avoir "
-                    "des adresses distinctes de celle de l'utilisateur."
-                )
+            parent_emails = [email, guardian_email]
+            if guardian_email_2:
+                parent_emails.append(guardian_email_2)
+
+            if len(set(parent_emails)) != len(parent_emails):
+                flash("Les adresses e-mail doivent être différentes.")
                 return redirect(url_for("auth.inscription"))
 
             status = "pending_parent"
@@ -202,10 +199,11 @@ def inscription():
             send_validation_email(user)
             if age < 15:
                 send_parent_request(user, 1)
-                send_parent_request(user, 2)
+                if user.guardian_email_2:
+                    send_parent_request(user, 2)
                 flash(
-                    "Les e-mails de vérification et les deux demandes "
-                    "parentales ont été envoyés."
+                    "Les e-mails de vérification et la demande parentale "
+                    "ont été envoyés."
                 )
             else:
                 flash("Un e-mail de vérification vient d'être envoyé.")
@@ -278,6 +276,9 @@ def consentement_parent(guardian_number, token):
 
     if calculate_age(user.birth_date) >= 15:
         return "Ce compte ne nécessite pas de consentement parental.", 400
+
+    if guardian_number == 2 and not user.guardian_email_2:
+        return "Aucun deuxième responsable n'est enregistré.", 403
 
     consent_field = (
         "guardian_consent_1_at"
