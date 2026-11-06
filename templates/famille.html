@@ -242,39 +242,39 @@ async function loadGroups() {
             card.append(childForm);
 
             if (group["can_invite_second_parent"]) {
-            card.append(
-                createElement("h4", "Inviter un deuxième responsable")
-            );
+                card.append(
+                    createElement("h4", "Inviter un deuxième responsable")
+                );
 
-            const parentForm = document.createElement("form");
-            const emailInput = document.createElement("input");
-            emailInput.type = "email";
-            emailInput.name = "email";
-            emailInput.placeholder = "Adresse e-mail du responsable";
-            emailInput.required = true;
+                const parentForm = document.createElement("form");
+                const emailInput = document.createElement("input");
+                emailInput.type = "email";
+                emailInput.name = "email";
+                emailInput.placeholder = "Adresse e-mail du responsable";
+                emailInput.required = true;
 
-            const parentButton = createElement("button", "Inviter");
-            parentButton.type = "submit";
+                const parentButton = createElement("button", "Inviter");
+                parentButton.type = "submit";
 
-            parentForm.append(emailInput, parentButton);
+                parentForm.append(emailInput, parentButton);
 
-            parentForm.addEventListener("submit", async event => {
-                event.preventDefault();
-                try {
-                    await api(
-                        `/famille/${group.id}/inviter-responsable`,
-                        "POST",
-                        {email: emailInput.value}
-                    );
-                    showMessage("Invitation envoyée.");
-                    parentForm.reset();
-                    await refreshFamilyPage();
-                } catch (error) {
-                    showMessage(error.message, true);
-                }
-            });
+                parentForm.addEventListener("submit", async event => {
+                    event.preventDefault();
+                    try {
+                        await api(
+                            `/famille/${group.id}/inviter-responsable`,
+                            "POST",
+                            {email: emailInput.value}
+                        );
+                        showMessage("Invitation envoyée.");
+                        parentForm.reset();
+                        await refreshFamilyPage();
+                    } catch (error) {
+                        showMessage(error.message, true);
+                    }
+                });
 
-            card.append(parentForm);
+                card.append(parentForm);
             }
         }
 
@@ -293,8 +293,9 @@ async function refreshFamilyPage() {
     }
 }
 
-document.getElementById("create-family-form")
-    .addEventListener("submit", async event => {
+const createFamilyForm = document.getElementById("create-family-form");
+if (createFamilyForm) {
+    createFamilyForm.addEventListener("submit", async event => {
         event.preventDefault();
 
         const name = document.getElementById("family-name").value;
@@ -308,6 +309,7 @@ document.getElementById("create-family-form")
             showMessage(error.message, true);
         }
     });
+}
 
 refreshFamilyPage();
 </script>
