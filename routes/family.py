@@ -1,4 +1,4 @@
-from flask import Blueprint, jsonify, request, current_app
+from flask import Blueprint, jsonify, request, current_app, render_template, redirect, url_for
 
 from models import db
 from models.user import User
@@ -22,6 +22,16 @@ from services.contact_notifications import send_family_parent_invitation_notific
 
 
 family = Blueprint("family", __name__, url_prefix="/famille")
+
+
+@family.route("/espace", methods=["GET"])
+def espace():
+    user = require_user()
+
+    if not user:
+        return redirect(url_for("account.connexion"))
+
+    return render_template("famille.html", user=user)
 
 
 def require_user():
