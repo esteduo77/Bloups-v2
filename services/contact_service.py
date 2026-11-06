@@ -151,23 +151,15 @@ def create_contact_request(sender, receiver):
         raise ValueError("Une demande est déjà en attente.")
 
     is_under_15 = calculate_age(sender.birth_date) < 15
-    guardian_emails = []
+    guardian_email = None
 
     if is_under_15:
-        guardian_emails = [
-            sender.guardian_email,
-            sender.guardian_email_2
-        ]
-        if not all(guardian_emails):
+        guardian_email = (sender.guardian_email or "").strip()
+
+        if not guardian_email:
             raise ValueError(
-                "Les deux adresses e-mail des représentants légaux "
-                "doivent être enregistrées."
-            )
-        normalized = [email.strip().lower() for email in guardian_emails]
-        if normalized[0] == normalized[1]:
-            raise ValueError(
-                "Les deux représentants légaux doivent avoir "
-                "des adresses e-mail distinctes."
+                "L'adresse e-mail du représentant légal "
+                "doit être enregistrée."
             )
 
     contact_request = ContactRequest(
@@ -179,15 +171,14 @@ def create_contact_request(sender, receiver):
     db.session.flush()
 
     if is_under_15:
-        for number, email in enumerate(guardian_emails, start=1):
-            db.session.add(
-                ParentalApproval(
-                    request_id=contact_request.id,
-                    guardian_number=number,
-                    guardian_email=email,
-                    status="pending"
-                )
+        db.session.add(
+            ParentalApproval(
+                request_id=contact_request.id,
+                guardian_number=1,
+                guardian_email=guardian_email,
+                status="pending"
             )
+        )
 
     db.session.commit()
     return contact_request
@@ -241,7 +232,7 @@ def decide_parental_approval(approval, decision):
         ).all()
 
         if (
-            len(approvals) == 2
+            approvals
             and all(item.status == "approved" for item in approvals)
             and sender
             and receiver
@@ -261,8 +252,9 @@ def parental_approvals_complete(request_id):
     ).all()
     if not approvals:
         return True
+
     return (
-        len(approvals) == 2
+        len(approvals) in (1, 2)
         and all(item.status == "approved" for item in approvals)
     )
 
@@ -278,7 +270,7 @@ def accept_contact_request(contact_request, receiver):
         raise PermissionError("Cette demande ne peut plus être acceptée.")
     if not parental_approvals_complete(contact_request.id):
         raise PermissionError(
-            "Les deux représentants légaux doivent approuver "
+            "Le représentant légal doit approuver "
             "la demande avant son acceptation."
         )
     if are_contacts(contact_request.sender_id, contact_request.receiver_id):
