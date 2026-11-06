@@ -1,0 +1,127 @@
+ .family-page {
+    width: min(1100px, 92%);
+    margin: 45px auto;
+}
+
+.family-header {
+    padding: 35px;
+    border-radius: 24px;
+    color: white;
+    background: linear-gradient(120deg, #14275f, #315bd2, #7951dc);
+    margin-bottom: 25px;
+}
+
+.family-header h1 {
+    font-size: clamp(30px, 5vw, 44px);
+    margin: 12px 0;
+}
+
+.family-panel {
+    background: white;
+    padding: 25px;
+    margin: 20px 0;
+    border-radius: 20px;
+    box-shadow: 0 8px 25px #17234d12;
+}
+
+.family-panel h2 {
+    margin-bottom: 18px;
+}
+
+.family-card {
+    border: 1px solid #e2e8fa;
+    border-radius: 15px;
+    padding: 20px;
+    margin: 15px 0;
+}
+
+.family-card h3,
+.family-card h4 {
+    margin: 12px 0;
+}
+
+.family-card form {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin: 12px 0;
+}
+
+.family-card input,
+.family-panel input {
+    min-width: 0;
+    padding: 12px;
+    border: 1px solid #ccd5ee;
+    border-radius: 10px;
+}
+
+.family-card input {
+    flex: 1;
+}
+
+.family-card button,
+.family-panel button {
+    padding: 12px 18px;
+    border: 0;
+    border-radius: 10px;
+    color: white;
+    background: linear-gradient(110deg, #1768e8, #7951dc);
+    cursor: pointer;
+}
+
+.family-panel form {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+
+.family-panel form input {
+    flex: 1;
+}
+
+.secondary-action {
+    margin-left: 8px;
+    background: #66718d !important;
+}
+
+.family-notice {
+    padding: 18px;
+    border-left: 4px solid #8964ff;
+    background: #f0edff;
+    border-radius: 10px;
+    line-height: 1.6;
+}
+
+.family-success,
+.family-error {
+    padding: 12px;
+    margin: 15px 0;
+    border-radius: 10px;
+}
+
+.family-success {
+    background: #e8f8ef;
+    color: #17683e;
+}
+
+.family-error {
+    background: #fff0f0;
+    color: #a52d38;
+}
+
+@media (max-width: 600px) {
+    .family-header,
+    .family-panel {
+        padding: 20px;
+    }
+
+    .family-card form,
+    .family-panel form {
+        flex-direction: column;
+    }
+
+    .family-card button,
+    .family-panel button {
+        width: 100%;
+    }
+}
