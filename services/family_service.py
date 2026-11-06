@@ -178,11 +178,20 @@ def get_family_members(family_id, user):
             "Tu ne peux pas consulter ce groupe familial."
         )
 
-    return FamilyMembership.query.filter_by(
+    query = FamilyMembership.query.filter_by(
         family_id=family_id
-    ).filter(
-        FamilyMembership.status.in_(["active", "pending"])
-    ).all()
+    )
+
+    if membership.member_role != "parent":
+        query = query.filter(
+            FamilyMembership.status == "active"
+        )
+    else:
+        query = query.filter(
+            FamilyMembership.status.in_(["active", "pending"])
+        )
+
+    return query.all()
 
 
 def invite_second_parent(family_id, inviter, email):
