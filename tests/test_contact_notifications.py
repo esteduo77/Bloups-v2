@@ -119,3 +119,35 @@ def test_deux_accords_creent_notification_destinataire(app):
         ).one()
         assert notification.recipient == receiver.email
         assert notification.status == "pending"
+
+
+def test_un_seul_accord_parental_notifie_le_destinataire(app):
+    with app.app_context():
+        sender = make_user("alice")
+        receiver = make_user("bob")
+
+        contact_request = ContactRequest(
+            sender_id=sender.id,
+            receiver_id=receiver.id,
+            status="pending"
+        )
+        db.session.add(contact_request)
+        db.session.flush()
+
+        approval = ParentalApproval(
+            request_id=contact_request.id,
+            guardian_number=1,
+            guardian_email="parent1@example.com",
+            status="pending"
+        )
+        db.session.add(approval)
+        db.session.commit()
+
+        decide_parental_approval(approval, "approved")
+
+        notification = EmailOutbox.query.filter_by(
+            dedupe_key=f"contact-ready-{contact_request.id}"
+        ).one()
+
+        assert notification.recipient == receiver.email
+        assert notification.status == "pending"
