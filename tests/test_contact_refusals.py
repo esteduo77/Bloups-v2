@@ -161,3 +161,32 @@ def test_decision_parentale_deja_traitee_ne_peut_pas_etre_rejouee(app):
 
         with pytest.raises(ValueError):
             decide_parental_approval(approvals[0], "approved")
+
+
+def test_un_seul_refus_parental_cloture_la_demande(app, monkeypatch):
+    with app.app_context():
+        sender = make_user("alice", date(2013, 1, 1))
+        receiver = make_user("bob")
+
+        contact_request, approvals = make_request(
+            sender, receiver, with_approvals=False
+        )
+
+        approval = ParentalApproval(
+            request_id=contact_request.id,
+            guardian_number=1,
+            guardian_email="parent1@example.com",
+            status="pending"
+        )
+        db.session.add(approval)
+        db.session.commit()
+
+        monkeypatch.setattr(
+            "services.contact_notifications.send_contact_request_rejected_notification",
+            lambda *args, **kwargs: None
+        )
+
+        decide_parental_approval(approval, "rejected")
+
+        assert contact_request.status == "rejected"
+        assert approval.status == "rejected"
