@@ -119,7 +119,11 @@ def demander(user_id):
             }), 201
 
         try:
-            send_contact_request_notification(receiver, sender)
+            send_contact_request_notification(
+                receiver,
+                sender,
+                contact_request.id
+            )
         except Exception:
             current_app.logger.exception(
                 "Échec de notification d'une demande de contact."
