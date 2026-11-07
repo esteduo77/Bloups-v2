@@ -354,6 +354,9 @@ def accept_parent_invitation(membership_id, invitee):
 
 
 def decline_parent_invitation(membership_id, invitee):
+    if not invitee or not invitee.is_active:
+        raise PermissionError("Ce compte n'est pas actif.")
+
     membership = db.session.get(FamilyMembership, membership_id)
 
     if not membership:
@@ -377,10 +380,15 @@ def get_my_pending_invitations(user):
             FamilyGroup,
             FamilyMembership.family_id == FamilyGroup.id
         )
+        .join(
+            User,
+            FamilyMembership.user_id == User.id
+        )
         .filter(
             FamilyMembership.user_id == user.id,
             FamilyMembership.status == "pending",
-            FamilyGroup.is_active.is_(True)
+            FamilyGroup.is_active.is_(True),
+            User.is_active.is_(True)
         )
         .all()
     )
