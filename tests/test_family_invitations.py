@@ -222,3 +222,56 @@ def test_invitation_deja_traitee_ne_peut_pas_etre_refusee(app):
             )
 
         assert invitation.status == "active"
+
+
+
+def test_compte_desactive_ne_voit_pas_ses_invitations(app):
+    with app.app_context():
+        family, parent, child, second_parent, parent_membership = (
+            make_family()
+        )
+
+        invitation = FamilyMembership(
+            family_id=family.id,
+            user_id=second_parent.id,
+            invited_by_id=parent.id,
+            member_role="parent",
+            status="pending"
+        )
+        db.session.add(invitation)
+        db.session.commit()
+
+        second_parent.is_active = False
+        db.session.commit()
+
+        from services.family_service import get_my_pending_invitations
+
+        assert get_my_pending_invitations(second_parent) == []
+
+
+def test_compte_desactive_ne_peut_pas_refuser_invitation(app):
+    with app.app_context():
+        family, parent, child, second_parent, parent_membership = (
+            make_family()
+        )
+
+        invitation = FamilyMembership(
+            family_id=family.id,
+            user_id=second_parent.id,
+            invited_by_id=parent.id,
+            member_role="parent",
+            status="pending"
+        )
+        db.session.add(invitation)
+        db.session.commit()
+
+        second_parent.is_active = False
+        db.session.commit()
+
+        with pytest.raises(PermissionError):
+            decline_parent_invitation(
+                invitation.id,
+                second_parent
+            )
+
+        assert invitation.status == "pending"
