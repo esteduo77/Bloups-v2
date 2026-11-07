@@ -181,6 +181,13 @@ def accept_child_invitation(membership_id, child):
 
 
 def get_family_members(family_id, user):
+    family = db.session.get(FamilyGroup, family_id)
+
+    if not family or not family.is_active:
+        raise PermissionError(
+            "Ce groupe familial n'est plus accessible."
+        )
+
     membership = FamilyMembership.query.filter_by(
         family_id=family_id,
         user_id=user.id,
@@ -364,7 +371,16 @@ def decline_parent_invitation(membership_id, invitee):
 
 
 def get_my_pending_invitations(user):
-    return FamilyMembership.query.filter_by(
-        user_id=user.id,
-        status="pending"
-    ).all()
+    return (
+        FamilyMembership.query
+        .join(
+            FamilyGroup,
+            FamilyMembership.family_id == FamilyGroup.id
+        )
+        .filter(
+            FamilyMembership.user_id == user.id,
+            FamilyMembership.status == "pending",
+            FamilyGroup.is_active.is_(True)
+        )
+        .all()
+    )
