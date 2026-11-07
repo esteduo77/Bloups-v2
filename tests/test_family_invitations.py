@@ -14,6 +14,7 @@ from models.family_membership import FamilyMembership
 from services.family_service import (
     accept_child_invitation,
     accept_parent_invitation,
+    decline_parent_invitation,
 )
 
 
@@ -147,3 +148,77 @@ def test_second_responsable_refuse_si_createur_n_est_plus_actif(app):
             accept_parent_invitation(invitation.id, second_parent)
 
         assert invitation.status == "pending"
+
+
+
+def test_responsable_peut_refuser_sa_propre_invitation(app):
+    with app.app_context():
+        family, parent, child, second_parent, parent_membership = (
+            make_family()
+        )
+
+        invitation = FamilyMembership(
+            family_id=family.id,
+            user_id=second_parent.id,
+            invited_by_id=parent.id,
+            member_role="parent",
+            status="pending"
+        )
+        db.session.add(invitation)
+        db.session.commit()
+
+        result = decline_parent_invitation(
+            invitation.id,
+            second_parent
+        )
+
+        assert result.status == "revoked"
+
+
+def test_utilisateur_ne_peut_pas_refuser_invitation_d_autrui(app):
+    with app.app_context():
+        family, parent, child, second_parent, parent_membership = (
+            make_family()
+        )
+
+        outsider = make_user("outsider")
+
+        invitation = FamilyMembership(
+            family_id=family.id,
+            user_id=second_parent.id,
+            invited_by_id=parent.id,
+            member_role="parent",
+            status="pending"
+        )
+        db.session.add(invitation)
+        db.session.commit()
+
+        with pytest.raises(PermissionError):
+            decline_parent_invitation(invitation.id, outsider)
+
+        assert invitation.status == "pending"
+
+
+def test_invitation_deja_traitee_ne_peut_pas_etre_refusee(app):
+    with app.app_context():
+        family, parent, child, second_parent, parent_membership = (
+            make_family()
+        )
+
+        invitation = FamilyMembership(
+            family_id=family.id,
+            user_id=second_parent.id,
+            invited_by_id=parent.id,
+            member_role="parent",
+            status="active"
+        )
+        db.session.add(invitation)
+        db.session.commit()
+
+        with pytest.raises(ValueError):
+            decline_parent_invitation(
+                invitation.id,
+                second_parent
+            )
+
+        assert invitation.status == "active"
