@@ -154,6 +154,20 @@ def accept_child_invitation(membership_id, child):
     if not family or not family.is_active:
         raise ValueError("Ce groupe familial n'est plus actif.")
 
+    inviter = db.session.get(User, membership.invited_by_id)
+
+    if (
+        not inviter
+        or not inviter.is_active
+        or not get_active_parent_membership(
+            membership.family_id,
+            inviter.id
+        )
+    ):
+        raise PermissionError(
+            "L'invitation n'est plus valide : le responsable qui l'a envoyée n'est plus actif dans ce groupe."
+        )
+
     membership.status = "active"
     membership.accepted_at = datetime.now(timezone.utc)
 
@@ -299,6 +313,21 @@ def accept_parent_invitation(membership_id, invitee):
         raise ValueError("Ce groupe familial n'est plus actif.")
     if membership.invited_by_id != family.created_by_id:
         raise PermissionError("Invitation non autorisée.")
+
+    inviter = db.session.get(User, family.created_by_id)
+
+    if (
+        not inviter
+        or not inviter.is_active
+        or not get_active_parent_membership(
+            family.id,
+            inviter.id
+        )
+    ):
+        raise PermissionError(
+            "L'invitation n'est plus valide : le créateur n'est plus responsable actif de ce groupe."
+        )
+
     if not invitee.is_active or not invitee.birth_date:
         raise PermissionError("Compte responsable invalide.")
     if calculate_age(invitee.birth_date) < 18:
