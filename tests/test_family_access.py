@@ -11,7 +11,10 @@ from models import db
 from models.user import User
 from models.family_group import FamilyGroup
 from models.family_membership import FamilyMembership
-from services.family_service import get_family_members
+from services.family_service import (
+    get_family_members,
+    get_my_pending_invitations,
+)
 
 
 @pytest.fixture
@@ -106,3 +109,27 @@ def test_utilisateur_exterieur_ne_peut_pas_voir_le_groupe(app):
 
         with pytest.raises(PermissionError):
             get_family_members(group.id, outsider)
+
+
+
+def test_groupe_desactive_inaccessible_aux_membres(app):
+    with app.app_context():
+        group, parent, child, pending_child, outsider = make_family()
+
+        group.is_active = False
+        db.session.commit()
+
+        with pytest.raises(PermissionError):
+            get_family_members(group.id, parent)
+
+
+def test_invitations_des_groupes_desactives_non_affichees(app):
+    with app.app_context():
+        group, parent, child, pending_child, outsider = make_family()
+
+        group.is_active = False
+        db.session.commit()
+
+        invitations = get_my_pending_invitations(pending_child)
+
+        assert invitations == []
