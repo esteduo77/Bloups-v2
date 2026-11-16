@@ -16,6 +16,7 @@ from services.family_service import (
     accept_parent_invitation,
     decline_parent_invitation,
     invite_child,
+    invite_second_parent,
 )
 
 
@@ -368,3 +369,65 @@ def test_enfant_sans_date_naissance_ne_peut_pas_accepter(app):
 
         assert invitation.status == "pending"
 
+
+def test_troisieme_responsable_refuse_meme_si_ancienne_invitation_revoquee(app):
+    with app.app_context():
+        family, parent, child, second_parent, parent_membership = (
+            make_family()
+        )
+        third_parent = make_user("thirdparent")
+
+        active_membership = FamilyMembership(
+            family_id=family.id,
+            user_id=second_parent.id,
+            invited_by_id=parent.id,
+            member_role="parent",
+            status="active"
+        )
+        revoked_membership = FamilyMembership(
+            family_id=family.id,
+            user_id=third_parent.id,
+            invited_by_id=parent.id,
+            member_role="parent",
+            status="revoked"
+        )
+        db.session.add_all([
+            active_membership,
+            revoked_membership
+        ])
+        db.session.commit()
+
+        with pytest.raises(ValueError):
+            invite_second_parent(
+                family.id,
+                parent,
+                third_parent.email
+            )
+
+        assert revoked_membership.status == "revoked"
+
+
+def test_responsable_revoque_peut_etre_reinvite_si_place_disponible(app):
+    with app.app_context():
+        family, parent, child, second_parent, parent_membership = (
+            make_family()
+        )
+
+        revoked_membership = FamilyMembership(
+            family_id=family.id,
+            user_id=second_parent.id,
+            invited_by_id=parent.id,
+            member_role="parent",
+            status="revoked"
+        )
+        db.session.add(revoked_membership)
+        db.session.commit()
+
+        result = invite_second_parent(
+            family.id,
+            parent,
+            second_parent.email
+        )
+
+        assert result.id == revoked_membership.id
+        assert result.status == "pending"
