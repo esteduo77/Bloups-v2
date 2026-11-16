@@ -14,6 +14,7 @@ from models.family_membership import FamilyMembership
 from services.family_service import (
     get_family_members,
     get_my_pending_invitations,
+    revoke_child_membership,
 )
 
 
@@ -159,3 +160,86 @@ def test_utilisateur_desactive_ne_peut_pas_consulter_groupe(app):
         with pytest.raises(PermissionError):
             get_family_members(group.id, parent)
 
+
+
+
+def test_parent_actif_peut_retirer_un_enfant(app):
+    with app.app_context():
+        group, parent, child, pending_child, outsider = make_family()
+
+        membership = FamilyMembership.query.filter_by(
+            family_id=group.id,
+            user_id=child.id
+        ).first()
+
+        result = revoke_child_membership(
+            group.id,
+            membership.id,
+            parent
+        )
+
+        assert result.status == "revoked"
+
+
+def test_enfant_ne_peut_pas_retirer_un_autre_membre(app):
+    with app.app_context():
+        group, parent, child, pending_child, outsider = make_family()
+
+        membership = FamilyMembership.query.filter_by(
+            family_id=group.id,
+            user_id=pending_child.id
+        ).first()
+
+        with pytest.raises(PermissionError):
+            revoke_child_membership(
+                group.id,
+                membership.id,
+                child
+            )
+
+        assert membership.status == "pending"
+
+
+def test_parent_ne_peut_pas_retirer_un_autre_parent(app):
+    with app.app_context():
+        group, parent, child, pending_child, outsider = make_family()
+
+        second_parent = make_user("secondparent")
+
+        membership = FamilyMembership(
+            family_id=group.id,
+            user_id=second_parent.id,
+            invited_by_id=parent.id,
+            member_role="parent",
+            status="active"
+        )
+        db.session.add(membership)
+        db.session.commit()
+
+        with pytest.raises(PermissionError):
+            revoke_child_membership(
+                group.id,
+                membership.id,
+                parent
+            )
+
+        assert membership.status == "active"
+
+
+def test_parent_ne_peut_pas_retirer_un_membre_d_un_autre_groupe(app):
+    with app.app_context():
+        group, parent, child, pending_child, outsider = make_family()
+
+        membership = FamilyMembership.query.filter_by(
+            family_id=group.id,
+            user_id=child.id
+        ).first()
+
+        with pytest.raises(ValueError):
+            revoke_child_membership(
+                group.id + 100,
+                membership.id,
+                parent
+            )
+
+        assert membership.status == "active"
