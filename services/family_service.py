@@ -345,9 +345,7 @@ def invite_second_parent(family_id, inviter, email):
         FamilyMembership.status.in_(["active", "pending"])
     ).count()
 
-    if parent_count >= 2 and not (
-        existing_membership and existing_membership.status == "revoked"
-    ):
+    if parent_count >= 2:
         raise ValueError("Ce groupe possède déjà deux responsables.")
 
     if existing_membership:
