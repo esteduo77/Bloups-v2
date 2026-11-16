@@ -245,6 +245,47 @@ def get_family_members(family_id, user):
         )
 
     return query.all()
+
+
+def revoke_child_membership(family_id, membership_id, parent):
+    if not parent or not parent.is_active:
+        raise PermissionError("Compte responsable invalide.")
+
+    family = db.session.get(FamilyGroup, family_id)
+
+    if not family or not family.is_active:
+        raise ValueError("Groupe familial introuvable.")
+
+    if not get_active_parent_membership(family_id, parent.id):
+        raise PermissionError(
+            "Seul un responsable actif peut retirer un enfant."
+        )
+
+    membership = db.session.get(
+        FamilyMembership,
+        membership_id
+    )
+
+    if not membership or membership.family_id != family_id:
+        raise ValueError("Membre introuvable dans ce groupe.")
+
+    if membership.member_role != "child":
+        raise PermissionError(
+            "Cette action est réservée aux adhésions des enfants."
+        )
+
+    if membership.status != "active":
+        raise ValueError(
+            "Ce membre n'est pas actuellement actif dans le groupe."
+        )
+
+    membership.status = "revoked"
+    membership.relationship_verified_at = None
+
+    db.session.commit()
+    return membership
+
+
 def invite_second_parent(family_id, inviter, email):
     family = db.session.get(FamilyGroup, family_id)
 
