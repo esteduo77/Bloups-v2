@@ -36,7 +36,10 @@ def espace():
     return render_template(
         "famille.html",
         user=user,
-        can_create_family=calculate_age(user.birth_date) >= 18
+        can_create_family=(
+            bool(user.birth_date)
+            and calculate_age(user.birth_date) >= 18
+        )
     )
 
 
