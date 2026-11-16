@@ -15,6 +15,7 @@ from services.family_service import (
     accept_child_invitation,
     accept_parent_invitation,
     decline_parent_invitation,
+    invite_child,
 )
 
 
@@ -273,5 +274,44 @@ def test_compte_desactive_ne_peut_pas_refuser_invitation(app):
                 invitation.id,
                 second_parent
             )
+
+        assert invitation.status == "pending"
+
+
+
+def test_parent_desactive_ne_peut_pas_inviter_enfant(app):
+    with app.app_context():
+        family, parent, child, second_parent, parent_membership = (
+            make_family()
+        )
+
+        parent.is_active = False
+        db.session.commit()
+
+        with pytest.raises(PermissionError):
+            invite_child(family.id, parent, child.username)
+
+
+def test_enfant_desactive_ne_peut_pas_accepter_invitation(app):
+    with app.app_context():
+        family, parent, child, second_parent, parent_membership = (
+            make_family()
+        )
+
+        invitation = FamilyMembership(
+            family_id=family.id,
+            user_id=child.id,
+            invited_by_id=parent.id,
+            member_role="child",
+            status="pending"
+        )
+        db.session.add(invitation)
+        db.session.commit()
+
+        child.is_active = False
+        db.session.commit()
+
+        with pytest.raises(PermissionError):
+            accept_child_invitation(invitation.id, child)
 
         assert invitation.status == "pending"
