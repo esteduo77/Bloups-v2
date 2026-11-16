@@ -15,7 +15,8 @@ from services.family_service import (
     invite_second_parent,
     accept_parent_invitation,
     decline_parent_invitation,
-    calculate_age
+    calculate_age,
+    revoke_child_membership
 )
 
 from extensions import limiter
@@ -246,6 +247,43 @@ def membres(family_id):
     except PermissionError as error:
         return jsonify({"error": str(error)}), 403
 
+
+@family.route(
+    "/<int:family_id>/membres/<int:membership_id>/retirer",
+    methods=["POST"]
+)
+@limiter.limit("10 per hour")
+def retirer_membre(family_id, membership_id):
+    user = require_user()
+
+    if not user:
+        return jsonify({"error": "Connexion requise."}), 401
+
+    try:
+        revoke_child_membership(
+            family_id,
+            membership_id,
+            user
+        )
+
+        return jsonify({
+            "message": "L'enfant a été retiré du groupe familial."
+        })
+
+    except PermissionError as error:
+        db.session.rollback()
+        return jsonify({"error": str(error)}), 403
+
+    except ValueError as error:
+        db.session.rollback()
+        return jsonify({"error": str(error)}), 400
+
+    except Exception:
+        db.session.rollback()
+        current_app.logger.exception(
+            "Erreur lors du retrait d'un membre familial."
+        )
+        return jsonify({"error": "Erreur interne."}), 500
 
 
 @family.route("/<int:family_id>/inviter-responsable", methods=["POST"])
