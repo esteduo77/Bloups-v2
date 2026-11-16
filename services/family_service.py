@@ -190,6 +190,9 @@ def accept_child_invitation(membership_id, child):
 
 
 def get_family_members(family_id, user):
+    if not user or not user.is_active:
+        raise PermissionError("Ce compte n'est pas actif.")
+
     family = db.session.get(FamilyGroup, family_id)
 
     if not family or not family.is_active:
@@ -208,8 +211,13 @@ def get_family_members(family_id, user):
             "Tu ne peux pas consulter ce groupe familial."
         )
 
-    query = FamilyMembership.query.filter_by(
-        family_id=family_id
+    query = (
+        FamilyMembership.query
+        .join(User, FamilyMembership.user_id == User.id)
+        .filter(
+            FamilyMembership.family_id == family_id,
+            User.is_active.is_(True)
+        )
     )
 
     if membership.member_role != "parent":
@@ -222,8 +230,6 @@ def get_family_members(family_id, user):
         )
 
     return query.all()
-
-
 def invite_second_parent(family_id, inviter, email):
     family = db.session.get(FamilyGroup, family_id)
 
