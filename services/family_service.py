@@ -28,8 +28,8 @@ def get_active_parent_membership(family_id, user_id):
 def create_family(parent, name):
     name = (name or "").strip()
 
-    if not parent or not parent.is_active:
-        raise ValueError("Compte parent invalide.")
+    if not parent or not parent.is_active or not parent.birth_date:
+        raise PermissionError("Compte parent invalide.")
 
     if calculate_age(parent.birth_date) < 18:
         raise PermissionError(
@@ -248,8 +248,11 @@ def get_family_members(family_id, user):
 
 
 def revoke_child_membership(family_id, membership_id, parent):
-    if not parent or not parent.is_active:
+    if not parent or not parent.is_active or not parent.birth_date:
         raise PermissionError("Compte responsable invalide.")
+
+    if calculate_age(parent.birth_date) < 18:
+        raise PermissionError("Un compte adulte est nécessaire.")
 
     family = db.session.get(FamilyGroup, family_id)
 
