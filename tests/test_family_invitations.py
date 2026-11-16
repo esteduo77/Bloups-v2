@@ -315,3 +315,56 @@ def test_enfant_desactive_ne_peut_pas_accepter_invitation(app):
             accept_child_invitation(invitation.id, child)
 
         assert invitation.status == "pending"
+
+
+def test_enfant_devenu_majeur_ne_peut_pas_accepter(app):
+    with app.app_context():
+        family, parent, child, second_parent, parent_membership = (
+            make_family()
+        )
+
+        invitation = FamilyMembership(
+            family_id=family.id,
+            user_id=child.id,
+            invited_by_id=parent.id,
+            member_role="child",
+            status="pending"
+        )
+        db.session.add(invitation)
+
+        today = date.today()
+        child.birth_date = date(
+            today.year - 18,
+            today.month,
+            min(today.day, 28)
+        )
+        db.session.commit()
+
+        with pytest.raises(PermissionError):
+            accept_child_invitation(invitation.id, child)
+
+        assert invitation.status == "pending"
+
+
+def test_enfant_sans_date_naissance_ne_peut_pas_accepter(app):
+    with app.app_context():
+        family, parent, child, second_parent, parent_membership = (
+            make_family()
+        )
+
+        invitation = FamilyMembership(
+            family_id=family.id,
+            user_id=child.id,
+            invited_by_id=parent.id,
+            member_role="child",
+            status="pending"
+        )
+        db.session.add(invitation)
+        child.birth_date = None
+        db.session.commit()
+
+        with pytest.raises(PermissionError):
+            accept_child_invitation(invitation.id, child)
+
+        assert invitation.status == "pending"
+
