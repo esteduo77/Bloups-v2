@@ -15,6 +15,7 @@ from services.family_service import (
     get_family_members,
     get_my_pending_invitations,
     revoke_child_membership,
+    create_family,
 )
 
 
@@ -238,6 +239,65 @@ def test_parent_ne_peut_pas_retirer_un_membre_d_un_autre_groupe(app):
         with pytest.raises(ValueError):
             revoke_child_membership(
                 group.id + 100,
+                membership.id,
+                parent
+            )
+
+        assert membership.status == "active"
+
+
+def test_compte_sans_date_naissance_ne_peut_pas_creer_groupe(app):
+    with app.app_context():
+        parent = make_user("parent_sans_date")
+        parent.birth_date = None
+        db.session.commit()
+
+        with pytest.raises(PermissionError):
+            create_family(parent, "Ma famille")
+
+
+def test_responsable_sans_date_naissance_ne_peut_pas_retirer_enfant(app):
+    with app.app_context():
+        group, parent, child, pending_child, outsider = make_family()
+
+        membership = FamilyMembership.query.filter_by(
+            family_id=group.id,
+            user_id=child.id
+        ).first()
+
+        parent.birth_date = None
+        db.session.commit()
+
+        with pytest.raises(PermissionError):
+            revoke_child_membership(
+                group.id,
+                membership.id,
+                parent
+            )
+
+        assert membership.status == "active"
+
+
+def test_responsable_devenu_mineur_ne_peut_pas_retirer_enfant(app):
+    with app.app_context():
+        group, parent, child, pending_child, outsider = make_family()
+
+        membership = FamilyMembership.query.filter_by(
+            family_id=group.id,
+            user_id=child.id
+        ).first()
+
+        today = date.today()
+        parent.birth_date = date(
+            today.year - 16,
+            today.month,
+            min(today.day, 28)
+        )
+        db.session.commit()
+
+        with pytest.raises(PermissionError):
+            revoke_child_membership(
+                group.id,
                 membership.id,
                 parent
             )
