@@ -133,3 +133,29 @@ def test_invitations_des_groupes_desactives_non_affichees(app):
         invitations = get_my_pending_invitations(pending_child)
 
         assert invitations == []
+
+
+def test_membres_desactives_non_affiches(app):
+    with app.app_context():
+        group, parent, child, pending_child, outsider = make_family()
+
+        child.is_active = False
+        db.session.commit()
+
+        members = get_family_members(group.id, parent)
+
+        assert child.id not in {
+            item.user_id for item in members
+        }
+
+
+def test_utilisateur_desactive_ne_peut_pas_consulter_groupe(app):
+    with app.app_context():
+        group, parent, child, pending_child, outsider = make_family()
+
+        parent.is_active = False
+        db.session.commit()
+
+        with pytest.raises(PermissionError):
+            get_family_members(group.id, parent)
+
