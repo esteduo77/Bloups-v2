@@ -93,6 +93,11 @@ def invite_child(family_id, parent, child_username):
     if child.id == parent.id:
         raise ValueError("Tu ne peux pas t'inviter toi-même.")
 
+    if not child.birth_date:
+        raise ValueError(
+            "La date de naissance du compte est manquante."
+        )
+
     if calculate_age(child.birth_date) >= 18:
         raise ValueError(
             "Ce compte ne correspond pas à un compte enfant."
@@ -135,6 +140,16 @@ def invite_child(family_id, parent, child_username):
 def accept_child_invitation(membership_id, child):
     if not child or not child.is_active:
         raise PermissionError("Ce compte n'est pas actif.")
+
+    if not child.birth_date:
+        raise PermissionError(
+            "La date de naissance du compte est manquante."
+        )
+
+    if calculate_age(child.birth_date) >= 18:
+        raise PermissionError(
+            "Cette invitation est réservée aux comptes mineurs."
+        )
 
     membership = db.session.get(
         FamilyMembership,
