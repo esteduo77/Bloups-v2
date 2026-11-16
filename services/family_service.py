@@ -64,6 +64,12 @@ def create_family(parent, name):
 
 
 def invite_child(family_id, parent, child_username):
+    if not parent or not parent.is_active or not parent.birth_date:
+        raise PermissionError("Compte responsable invalide.")
+
+    if calculate_age(parent.birth_date) < 18:
+        raise PermissionError("Un compte adulte est nécessaire.")
+
     if not get_active_parent_membership(family_id, parent.id):
         raise PermissionError(
             "Tu n'es pas responsable de ce groupe familial."
@@ -127,6 +133,9 @@ def invite_child(family_id, parent, child_username):
 
 
 def accept_child_invitation(membership_id, child):
+    if not child or not child.is_active:
+        raise PermissionError("Ce compte n'est pas actif.")
+
     membership = db.session.get(
         FamilyMembership,
         membership_id
