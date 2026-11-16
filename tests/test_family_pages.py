@@ -88,3 +88,21 @@ def test_mineur_ne_voit_pas_creation_groupe(app, client):
 
     assert response.status_code == 200
     assert b"create-family-form" not in response.data
+
+
+def test_compte_sans_date_naissance_accede_sans_creation_groupe(
+    app, client
+):
+    with app.app_context():
+        user = create_user(30)
+        user.birth_date = None
+        db.session.commit()
+        user_id = user.id
+
+    with client.session_transaction() as session:
+        session["user_id"] = user_id
+
+    response = client.get("/famille/espace")
+
+    assert response.status_code == 200
+    assert b"create-family-form" not in response.data
