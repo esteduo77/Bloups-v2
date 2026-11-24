@@ -414,6 +414,19 @@ def accept_parent_invitation(membership_id, invitee):
     if not invitee.email_verified_at:
         raise PermissionError("L'adresse e-mail doit être vérifiée.")
 
+    parent_count = FamilyMembership.query.filter_by(
+        family_id=family.id,
+        member_role="parent"
+    ).filter(
+        FamilyMembership.status.in_(["active", "pending"]),
+        FamilyMembership.id != membership.id
+    ).count()
+
+    if parent_count >= 2:
+        raise ValueError(
+            "Ce groupe possède déjà deux responsables."
+        )
+
     membership.status = "active"
     membership.accepted_at = datetime.now(timezone.utc)
 
