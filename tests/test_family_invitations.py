@@ -431,3 +431,54 @@ def test_responsable_revoque_peut_etre_reinvite_si_place_disponible(app):
 
         assert result.id == revoked_membership.id
         assert result.status == "pending"
+
+
+def test_acceptation_refusee_si_deux_responsables_deja_presents(app):
+    with app.app_context():
+        family, parent, child, second_parent, parent_membership = (
+            make_family()
+        )
+        third_parent = make_user("thirdparent")
+
+        active_membership = FamilyMembership(
+            family_id=family.id,
+            user_id=second_parent.id,
+            invited_by_id=parent.id,
+            member_role="parent",
+            status="active"
+        )
+        invitation = FamilyMembership(
+            family_id=family.id,
+            user_id=third_parent.id,
+            invited_by_id=parent.id,
+            member_role="parent",
+            status="pending"
+        )
+        db.session.add_all([active_membership, invitation])
+        db.session.commit()
+
+        with pytest.raises(ValueError):
+            accept_parent_invitation(invitation.id, third_parent)
+
+        assert invitation.status == "pending"
+
+
+def test_acceptation_autorisee_si_une_place_est_disponible(app):
+    with app.app_context():
+        family, parent, child, second_parent, parent_membership = (
+            make_family()
+        )
+
+        invitation = FamilyMembership(
+            family_id=family.id,
+            user_id=second_parent.id,
+            invited_by_id=parent.id,
+            member_role="parent",
+            status="pending"
+        )
+        db.session.add(invitation)
+        db.session.commit()
+
+        result = accept_parent_invitation(invitation.id, second_parent)
+
+        assert result.status == "active"
