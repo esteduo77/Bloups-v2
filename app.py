@@ -75,11 +75,6 @@ def create_app(test_config=None):
     def accueil():
         return render_template("accueil.html")
 
-    @app.route("/jeu")
-    def jeu_authentification():
-        """Mini-jeu pédagogique sur l'authentification et la sécurité des comptes."""
-        return render_template("jeu.html")
-
     @app.errorhandler(404)
     def page_introuvable(error):
         return render_template("erreurs/404.html"), 404
